@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React — ლექცია 1: შესავალი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============ ფერები / თემები ============ */
+:root{
+  --bg:#0b1020; --surface:#121a2e; --surface2:#18223b; --line:#26324f;
+  --text:#e9edf6; --muted:#97a3bb; --accent:#5ed3f3; --accent-ink:#04202a;
+  --amber:#ffb454; --red:#ff6b6b; --green:#6ee7a8; --violet:#b79cff;
+  --code-bg:#0e1528;
+  --t-key:#c792ea; --t-str:#c3e88d; --t-tag:#5ed3f3; --t-com:#6b7894; --t-num:#f78c6c;
+  --shadow:0 20px 50px rgba(0,0,0,.35);
+}
+:root[data-theme="light"]{
+  --bg:#f5f7fb; --surface:#ffffff; --surface2:#eef2f8; --line:#d6dde9;
+  --text:#121a2e; --muted:#56627a; --accent:#0a7ea4; --accent-ink:#ffffff;
+  --amber:#b86e00; --red:#c43d3d; --green:#16804f; --violet:#6b4fd1;
+  --code-bg:#0e1528;
+  --shadow:0 14px 34px rgba(18,26,46,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden}
+body{font-family:"Noto Sans Georgian","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+code,pre,.mono{font-family:"JetBrains Mono",Consolas,monospace}
+
+/* ============ სლაიდების სცენა (1280×720, მასშტაბირდება) ============ */
+#stage{position:fixed;inset:0;display:grid;place-items:center}
+#deck{width:1280px;height:720px;position:relative;transform-origin:center center}
+.slide{position:absolute;inset:0;padding:64px 80px 70px;display:flex;flex-direction:column;
+  background:var(--bg);opacity:0;visibility:hidden;transition:opacity .35s ease, visibility .35s}
+.slide.active{opacity:1;visibility:visible}
+.slide.active .rise{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+.slide.active .rise:nth-child(2){animation-delay:.06s}
+.slide.active .rise:nth-child(3){animation-delay:.12s}
+.slide.active .rise:nth-child(4){animation-delay:.18s}
+.slide.active .rise:nth-child(5){animation-delay:.24s}
+.slide.active .rise:nth-child(6){animation-delay:.30s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide.active .rise{animation:none}}
+
+/* ტიპოგრაფია */
+.kicker{font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+h1{font-size:64px;line-height:1.1;font-weight:800;letter-spacing:-.01em}
+h2{font-size:40px;line-height:1.2;font-weight:800;margin-bottom:28px;letter-spacing:-.005em}
+h3{font-size:22px;font-weight:700;margin-bottom:8px}
+p,li{font-size:22px;line-height:1.55}
+.lead{font-size:26px;line-height:1.5;color:var(--muted);max-width:980px}
+.muted{color:var(--muted)}
+.acc{color:var(--accent)}
+.small{font-size:17px}
+b,strong{font-weight:700}
+ul.clean{list-style:none}
+ul.clean li{padding-left:34px;position:relative;margin-bottom:14px}
+ul.clean li::before{content:"";position:absolute;left:4px;top:.62em;width:12px;height:12px;border-radius:3px;background:var(--accent);transform:rotate(45deg)}
+.foot{position:absolute;left:80px;right:80px;bottom:26px;display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+
+/* ბლოკები */
+.grid{display:grid;gap:22px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 26px;box-shadow:var(--shadow)}
+.card p{font-size:19px;color:var(--muted);line-height:1.5}
+.card.hl{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+.num{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--surface2);color:var(--accent);font-weight:800;font-size:18px;margin-bottom:14px}
+.chip{display:inline-block;padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:18px;font-weight:600;margin:0 8px 10px 0}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.tag{display:inline-block;font-size:14px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--surface2);color:var(--muted);letter-spacing:.04em}
+.tag.bad{color:var(--red)} .tag.good{color:var(--green)}
+.callout{border-left:4px solid var(--amber);background:var(--surface);padding:16px 22px;border-radius:0 12px 12px 0;font-size:20px}
+
+/* კოდი */
+pre.code{background:var(--code-bg);color:#dfe6f3;border:1px solid #23304d;border-radius:14px;padding:22px 24px;font-size:17px;line-height:1.6;overflow:hidden;white-space:pre}
+pre.code .k{color:var(--t-key)} pre.code .s{color:var(--t-str)} pre.code .t{color:var(--t-tag)}
+pre.code .c{color:var(--t-com);font-style:italic} pre.code .n{color:var(--t-num)}
+.code-title{font-size:15px;font-weight:700;color:var(--muted);margin-bottom:10px;display:flex;gap:10px;align-items:center}
+
+/* სატიტულო */
+.title-slide{justify-content:center}
+.title-slide h1{font-size:84px}
+.title-slide .lead{margin-top:22px}
+.orbit{position:absolute;right:70px;top:110px;width:430px;height:430px}
+.meta{margin-top:46px;display:flex;gap:28px;font-size:18px;color:var(--muted)}
+.meta span b{color:var(--text)}
+
+/* სექციის სლაიდი */
+.section-slide{justify-content:center}
+.section-slide .big{font-size:150px;font-weight:800;line-height:1;color:var(--surface2);-webkit-text-stroke:2px var(--line);margin-bottom:10px}
+.section-slide h1{font-size:68px}
+
+/* ნაკადის დიაგრამა */
+.flow{display:flex;align-items:center;gap:0}
+.flow .node{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-align:center}
+.flow .node b{display:block;font-size:20px}
+.flow .node span{font-size:16px;color:var(--muted)}
+.flow .node.hl{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.flow .arrow{width:46px;height:2px;background:var(--muted);position:relative;flex:none}
+.flow .arrow::after{content:"";position:absolute;right:-1px;top:-5px;border:6px solid transparent;border-left:9px solid var(--muted);border-right:0}
+.row-label{font-size:16px;font-weight:700;color:var(--muted);margin:0 0 10px 2px;letter-spacing:.04em}
+
+/* ციკლი */
+.cycle{position:relative;width:520px;height:440px}
+.cycle .step{position:absolute;width:200px;padding:16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);text-align:center}
+.cycle .step b{display:block;font-size:20px}
+.cycle .step span{font-size:15px;color:var(--muted)}
+
+/* დემო */
+.demo{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:stretch}
+.phone{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:var(--shadow)}
+.listing{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:10px;background:var(--surface2);margin-bottom:10px;font-size:18px}
+.listing small{color:var(--muted);font-size:15px}
+.flash{animation:flash .6s ease}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+button.btn{font:inherit;font-size:17px;font-weight:700;padding:10px 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--text);cursor:pointer}
+button.btn:hover{border-color:var(--accent)}
+button.btn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.state-box{font-family:"JetBrains Mono",monospace;font-size:16px;background:var(--code-bg);color:#dfe6f3;border-radius:12px;padding:18px;line-height:1.6;white-space:pre}
+.counter-render{font-size:14px;color:var(--muted);margin-top:10px}
+
+/* ბარები */
+.bars{display:flex;flex-direction:column;gap:20px;margin-top:10px}
+.bar{display:grid;grid-template-columns:150px 1fr 90px;align-items:center;gap:18px;font-size:21px}
+.bar .track{height:30px;background:var(--surface2);border-radius:8px;overflow:hidden}
+.bar .fill{height:100%;border-radius:8px;background:var(--muted);width:0;transition:width 1s cubic-bezier(.2,.7,.2,1) .2s}
+.bar.main .fill{background:var(--accent)}
+.bar .v{font-weight:800;text-align:right}
+
+/* ქრონოლოგია */
+.timeline{position:relative;margin-top:30px;display:grid;grid-template-columns:repeat(8,1fr);gap:0}
+.timeline::before{content:"";position:absolute;left:0;right:0;top:46px;height:2px;background:var(--line)}
+.tl{position:relative;padding:0 8px;text-align:center}
+.tl .y{font-weight:800;font-size:20px;color:var(--accent);height:30px}
+.tl .dot{width:16px;height:16px;border-radius:50%;background:var(--bg);border:3px solid var(--accent);margin:8px auto 16px;position:relative;z-index:1}
+.tl p{font-size:16px;line-height:1.4;color:var(--muted)}
+.tl.now .dot{background:var(--accent)}
+.tl.now p{color:var(--text)}
+
+/* ცხრილი */
+table.t{width:100%;border-collapse:separate;border-spacing:0;font-size:19px}
+table.t th{text-align:left;color:var(--muted);font-size:15px;letter-spacing:.06em;text-transform:uppercase;padding:0 18px 12px}
+table.t td{padding:16px 18px;border-top:1px solid var(--line);vertical-align:top;line-height:1.45}
+table.t tr.hl td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+table.t td:first-child{font-weight:700;white-space:nowrap}
+
+/* საქაღალდის ხე */
+.tree{font-family:"JetBrains Mono",monospace;font-size:17px;line-height:1.75;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 24px}
+.tree .d{color:var(--accent)} .tree .m{color:var(--muted)}
+
+/* UI მაკეტი (კომპონენტები) */
+.mock{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;height:430px;padding:14px;display:grid;grid-template-columns:1fr 250px;grid-template-rows:54px 1fr;gap:12px}
+.mock .box{border:2px dashed var(--line);border-radius:10px;position:relative;display:flex;align-items:flex-start;justify-content:flex-start;padding:8px 10px}
+.mock .lbl{font-family:"JetBrains Mono",monospace;font-size:14px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--surface2);color:var(--muted)}
+.mock .box.c1{border-color:var(--accent)} .mock .box.c1 .lbl{color:var(--accent)}
+.mock .box.c2{border-color:var(--amber)} .mock .box.c2 .lbl{color:var(--amber)}
+.mock .box.c3{border-color:var(--violet)} .mock .box.c3 .lbl{color:var(--violet)}
+.mock .box.c4{border-color:var(--green)} .mock .box.c4 .lbl{color:var(--green)}
+
+/* ============ UI: პროგრესი, მრიცხველი, შენიშვნები ============ */
+#progress{position:fixed;left:0;top:0;height:4px;background:var(--accent);z-index:20;transition:width .3s ease}
+#hud{position:fixed;right:18px;bottom:14px;display:flex;gap:8px;align-items:center;z-index:20;font-size:14px;color:var(--muted)}
+#hud button{font:inherit;font-size:14px;background:var(--surface);color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+#hud button:hover{color:var(--text);border-color:var(--accent)}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:34vh;overflow:auto;background:var(--surface);border-top:2px solid var(--accent);padding:16px 22px 56px;font-size:18px;line-height:1.55;z-index:15;transform:translateY(100%);transition:transform .3s ease}
+#notes.open{transform:none}
+#notes h4{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+#help{position:fixed;inset:0;background:rgba(5,8,16,.7);display:none;place-items:center;z-index:30}
+#help.open{display:grid}
+#help .card{width:min(520px,92vw)}
+#help table td{padding:6px 10px;font-size:17px}
+#help kbd{font-family:"JetBrains Mono",monospace;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:15px}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="stage"><div id="deck">
+
+<!-- 1. სატიტულო -->
+<section class="slide title-slide" data-notes="მივესალმოთ სტუდენტებს. ვუთხრათ, რომ კურსი ეყრდნობა The Ultimate React Course-ს (Jonas Schmedtmann), მაგრამ 2026 წლის ცვლილებებით: React 19, Vite, CRA-ს გაუქმება. დღეს ვპასუხობთ კითხვებს: რატომ React და როგორ დავიწყოთ.">
+  <svg class="orbit" viewBox="0 0 430 430" aria-hidden="true">
+    <defs><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".9"/><stop offset="1" stop-color="var(--violet)" stop-opacity=".6"/></linearGradient></defs>
+    <g stroke="var(--line)" stroke-width="2" fill="none">
+      <path d="M215 70 V150 M215 150 L110 240 M215 150 L320 240 M110 240 L60 340 M110 240 L160 340 M320 240 L270 340 M320 240 L370 340"/>
+    </g>
+    <rect x="165" y="40" width="100" height="56" rx="12" fill="var(--surface)" stroke="url(#gl)" stroke-width="3"/>
+    <text x="215" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="17" font-weight="600" fill="var(--accent)">&lt;App/&gt;</text>
+    <rect x="165" y="130" width="100" height="40" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <rect x="62" y="220" width="96" height="40" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <rect x="272" y="220" width="96" height="40" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/>
+    <g fill="var(--surface2)" stroke="var(--line)" stroke-width="2">
+      <rect x="28" y="322" width="64" height="36" rx="9"/><rect x="128" y="322" width="64" height="36" rx="9"/>
+      <rect x="238" y="322" width="64" height="36" rx="9"/><rect x="338" y="322" width="64" height="36" rx="9"/>
+    </g>
+  </svg>
+  <div class="kicker rise">ვებტექნოლოგიები · ლექცია 1</div>
+  <h1 class="rise">React-ის<br>შესავალი</h1>
+  <p class="lead rise">რატომ გაჩნდა front-end ფრეიმვორკები, რა არის React<br>და როგორ ავაწყოთ პირველი პროექტი 2026 წელს</p>
+  <div class="meta rise"><span>წყარო: <b>The Ultimate React Course</b></span><span>ვერსია: <b>React 19.3</b></span></div>
+</section>
+
+<!-- 2. გეგმა -->
+<section class="slide" data-notes="გეგმის მიმოხილვა, ≈ 90 წუთი. ვუთხრათ, რომ ლექციის ბოლოს თითოეულს ექნება გაშვებული React პროექტი ან მზად იქნება მის გასაშვებად.">
+  <div class="kicker rise">დღის გეგმა</div>
+  <h2 class="rise">რას გავივლით დღეს</h2>
+  <div class="grid g3 rise" style="margin-top:6px">
+    <div class="card"><div class="num">1</div><h3>რატომ ფრეიმვორკი?</h3><p>SSR, SPA და UI-ს სინქრონი მონაცემებთან</p></div>
+    <div class="card"><div class="num">2</div><h3>Vanilla JS vs React</h3><p>ერთი და იგივე ამოცანა — ორი მიდგომა</p></div>
+    <div class="card"><div class="num">3</div><h3>რა არის React</h3><p>კომპონენტები, JSX, state, ეკოსისტემა</p></div>
+    <div class="card"><div class="num">4</div><h3>Pure React</h3><p>React ერთ HTML ფაილში, build-ის გარეშე</p></div>
+    <div class="card"><div class="num">5</div><h3>პირველი პროექტი</h3><p>Vite, საქაღალდეების სტრუქტურა, react.dev</p></div>
+    <div class="card"><div class="num">6</div><h3>შეჯამება</h3><p>კითხვები და საშინაო დავალება</p></div>
+  </div>
+</section>
+
+<!-- 3. სექცია -->
+<section class="slide section-slide" data-notes="გადავდივართ პირველ ნაწილზე. დავუსვათ კითხვა: რომელ საიტს იყენებთ დღეს, რომელიც გვერდს არ გადატვირთავს? (Gmail, Instagram, YouTube, Facebook)">
+  <div class="big rise">01</div>
+  <h1 class="rise">რატომ არსებობს<br>front-end ფრეიმვორკები?</h1>
+</section>
+
+<!-- 4. SSR vs SPA -->
+<section class="slide" data-notes="ძველ გზაზე სერვერი აწყობს HTML-ს (PHP, WordPress) და ყოველ ბმულზე ახალ გვერდს გზავნის. ახალ გზაზე სერვერი მხოლოდ JSON-ს აძლევს API-ით და გვერდს ბრაუზერში JavaScript აწყობს — ეს არის Single-Page Application. სამუშაო ბრაუზერში გადადის და აქ ჩნდება React-ის საჭიროება.">
+  <div class="kicker rise">სერვერი თუ ბრაუზერი?</div>
+  <h2 class="rise">ვინ აწყობს გვერდს</h2>
+  <div class="rise" style="margin-top:4px">
+    <div class="row-label">ძველი გზა · SERVER-SIDE RENDERING</div>
+    <div class="flow">
+      <div class="node"><b>სერვერი</b><span>მონაცემები + შაბლონი</span></div><div class="arrow"></div>
+      <div class="node"><b>მზა HTML</b><span>ყოველ ბმულზე ახლიდან</span></div><div class="arrow"></div>
+      <div class="node"><b>ბრაუზერი</b><span>მხოლოდ აჩვენებს</span></div>
+    </div>
+  </div>
+  <div class="rise" style="margin-top:40px">
+    <div class="row-label">ახალი გზა · CLIENT-SIDE RENDERING / SPA</div>
+    <div class="flow">
+      <div class="node"><b>სერვერი (API)</b><span>აბრუნებს მონაცემებს</span></div><div class="arrow"></div>
+      <div class="node"><b>JSON</b><span>fetch-ით მოდის</span></div><div class="arrow"></div>
+      <div class="node hl"><b>ბრაუზერი + React</b><span>JS აწყობს და ანახლებს UI-ს</span></div>
+    </div>
+  </div>
+  <p class="callout rise" style="margin-top:40px"><b>SPA</b> — Single-Page Application: გვერდი არ იტვირთება ხელახლა და აპი დესკტოპური პროგრამასავით იქცევა.</p>
+</section>
+
+<!-- 5. პრობლემა: სინქრონი -->
+<section class="slide" data-notes="front-end აპი ორ რამეს აკეთებს: მონაცემების მართვას და მათ ჩვენებას. მთავარი სირთულე: UI ყოველთვის უნდა ემთხვეოდეს მონაცემებს. მაგალითი: Airbnb-ს ფილტრი ერთდროულად ცვლის სიას, რუკას, რაოდენობას და URL-ს. ყოველ მონაცემს ვეძახით state-ს.">
+  <div class="kicker rise">მთავარი პრობლემა</div>
+  <h2 class="rise">UI უნდა ემთხვეოდეს მონაცემებს. ყოველთვის.</h2>
+  <div class="grid g2 rise" style="align-items:center;gap:40px">
+    <svg viewBox="0 0 520 330" style="width:100%" aria-label="ბევრი მონაცემი, ბევრი ადგილი ეკრანზე">
+      <g font-family="JetBrains Mono" font-size="15" font-weight="600">
+        <g fill="var(--surface)" stroke="var(--amber)" stroke-width="2">
+          <rect x="10" y="20" width="130" height="44" rx="10"/><rect x="10" y="100" width="130" height="44" rx="10"/><rect x="10" y="180" width="130" height="44" rx="10"/><rect x="10" y="260" width="130" height="44" rx="10"/>
+        </g>
+        <g fill="var(--amber)" text-anchor="middle">
+          <text x="75" y="47">filters</text><text x="75" y="127">listings</text><text x="75" y="207">favorites</text><text x="75" y="287">user</text>
+        </g>
+        <g fill="var(--surface)" stroke="var(--accent)" stroke-width="2">
+          <rect x="370" y="20" width="140" height="44" rx="10"/><rect x="370" y="100" width="140" height="44" rx="10"/><rect x="370" y="180" width="140" height="44" rx="10"/><rect x="370" y="260" width="140" height="44" rx="10"/>
+        </g>
+        <g fill="var(--accent)" text-anchor="middle">
+          <text x="440" y="47">სია</text><text x="440" y="127">რუკა</text><text x="440" y="207">მრიცხველი</text><text x="440" y="287">URL</text>
+        </g>
+      </g>
+      <g stroke="var(--muted)" stroke-width="1.5" fill="none" opacity=".75">
+        <path d="M140 42 C260 42 250 42 370 42"/><path d="M140 42 C260 60 250 110 370 122"/><path d="M140 42 C260 70 250 190 370 202"/><path d="M140 42 C260 90 260 270 370 282"/>
+        <path d="M140 122 C250 122 260 50 370 42"/><path d="M140 122 C250 122 260 122 370 122"/><path d="M140 122 C250 150 260 190 370 202"/>
+        <path d="M140 202 C250 202 260 60 370 48"/><path d="M140 202 C260 230 250 280 370 282"/>
+        <path d="M140 282 C250 282 260 210 370 206"/><path d="M140 282 C260 260 250 140 370 128"/>
+      </g>
+      <text x="255" y="322" text-anchor="middle" font-size="16" font-weight="700" fill="var(--red)">?? ვინ განაახლებს ყველაფერს</text>
+    </svg>
+    <div>
+      <p style="margin-bottom:18px">აპი = <b>მონაცემების მართვა</b> + <b>მათი ჩვენება</b>.</p>
+      <p style="margin-bottom:18px">ერთი ცვლილება ეკრანზე <b>რამდენიმე ადგილს</b> ეხება.</p>
+      <p class="callout">მონაცემის ერთ ნაწილს ვეძახით <b class="acc">state</b>-ს (მდგომარეობა).</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Vanilla-ს პრობლემები -->
+<section class="slide" data-notes="vanilla JavaScript-ით ეს ორ სირთულეს ქმნის. 1) ბევრი პირდაპირი DOM მანიპულაცია — querySelector, textContent, appendChild — კოდი სპაგეტიდ იქცევა. 2) მონაცემები ხშირად თავად DOM-შია (მაგ. data-ატრიბუტებში) და მთელ აპშია მიმოფანტული — ძნელია გააზრება და ბევრი ბაგი ჩნდება.">
+  <div class="kicker rise">Vanilla JavaScript</div>
+  <h2 class="rise">რატომ არის ეს რთული უბრალო JS-ით</h2>
+  <div class="grid g2 rise">
+    <div class="card"><span class="tag bad">პრობლემა 1</span><h3 style="margin-top:14px">ბევრი პირდაპირი DOM მანიპულაცია</h3><p>querySelector → textContent → appendChild… ყოველ ცვლილებაზე ხელით. შედეგი — „სპაგეტი კოდი“.</p></div>
+    <div class="card"><span class="tag bad">პრობლემა 2</span><h3 style="margin-top:14px">state DOM-შია და ყველგანაა</h3><p>მონაცემები ელემენტებში და გლობალურ ცვლადებშია მიმოფანტული. ძნელია გააზრება, ბაგები ბევრია.</p></div>
+  </div>
+  <pre class="code rise" data-lang="js" style="margin-top:24px">// ერთი ფილტრის ცვლილება...
+list.innerHTML = "";
+results.forEach(r => list.appendChild(makeCard(r)));
+counter.textContent = results.length + " ბინა";
+map.clearMarkers(); results.forEach(r => map.addMarker(r));
+history.pushState({}, "", "?price=" + price);</pre>
+</section>
+
+<!-- 7. რას აკეთებს ფრეიმვორკი -->
+<section class="slide" data-notes="ფრეიმვორკები ამ სამუშაოს თავიანთ თავზე იღებენ. 1) UI-ს მონაცემებთან სინქრონში თვითონ ინახავენ. 2) კოდის სტრუქტურას გვიკარნახებენ. 3) გუნდს ერთიან სტანდარტს აძლევენ. React, Angular, Vue, Svelte — სხვადასხვა მიდგომა, ერთი მიზანი.">
+  <div class="kicker rise">გამოსავალი</div>
+  <h2 class="rise">ფრეიმვორკი ამ სამუშაოს თავზე იღებს</h2>
+  <div class="grid g3 rise">
+    <div class="card hl"><div class="num">1</div><h3>სინქრონი</h3><p>UI-ს მონაცემებთან თვითონ ათანხმებს — DOM-ს ხელით აღარ ვეხებით</p></div>
+    <div class="card"><div class="num">2</div><h3>სტრუქტურა</h3><p>კოდის „სწორ“ წყობას გვიკარნახებს — სპაგეტი კოდის წინააღმდეგ</p></div>
+    <div class="card"><div class="num">3</div><h3>ერთიანი წესები</h3><p>გუნდი ერთნაირად წერს აპლიკაციებს</p></div>
+  </div>
+  <div class="rise" style="margin-top:34px">
+    <p class="muted small" style="margin-bottom:12px">სხვადასხვა მიდგომა — ერთი მიზანი:</p>
+    <span class="chip on">React</span><span class="chip">Angular</span><span class="chip">Vue</span><span class="chip">Svelte</span>
+  </div>
+</section>
+
+<!-- 8. Vanilla vs React კოდი -->
+<section class="slide" data-notes="ერთი და იგივე მთვლელი ორ გზით. Vanilla: ჩვენ ვწერთ ᲠᲝᲒᲝᲠ შეიცვალოს გვერდი (იმპერატიული). React: ვწერთ ᲠᲝᲒᲝᲠᲘ უნდა იყოს (დეკლარაციული). თუ count 10 ადგილას ჩანს, vanilla-ში 10 ადგილს ვანახლებთ ხელით, React-ში მხოლოდ state-ს ვცვლით. კურსის Advice აპი: codesandbox.io/s/react-first-app-advice-52879f">
+  <div class="kicker rise">იმპერატიული vs დეკლარაციული</div>
+  <h2 class="rise">ერთი მთვლელი — ორი მიდგომა</h2>
+  <div class="grid g2 rise" style="gap:26px">
+    <div>
+      <div class="code-title"><span class="tag">Vanilla JS</span> ვწერთ, <b style="color:var(--text)">როგორ</b> შეიცვალოს</div>
+<pre class="code" data-lang="js">let count = 0;
+const span = document.querySelector("#count");
+const btn = document.querySelector("#btn");
+
+btn.addEventListener("click", () => {
+  count++;
+  span.textContent = count; // DOM-ს ვეხებით
+});</pre>
+    </div>
+    <div>
+      <div class="code-title"><span class="tag good">React</span> ვწერთ, <b style="color:var(--text)">როგორი</b> უნდა იყოს</div>
+<pre class="code" data-lang="js">function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    &lt;button onClick={() =&gt; setCount(count + 1)}&gt;
+      დაკლიკება: {count}
+    &lt;/button&gt;
+  );
+}</pre>
+    </div>
+  </div>
+  <p class="callout rise" style="margin-top:26px">React-ში ვცვლით მხოლოდ <b>state</b>-ს — ეკრანს React თვითონ განაახლებს.</p>
+</section>
+
+<!-- 9. ინტერაქტიული დემო -->
+<section class="slide" data-notes="ცოცხალი დემო: დააჭირეთ ფილტრებს. მარცხნივ ჩანს state (ობიექტი), მარჯვნივ UI. ყოველ ცვლილებაზე ვიძახებთ ერთ ფუნქციას render(state) და მთელი UI ახლიდან იხატება — ციანი ჩარჩო აჩვენებს, რომ გადაიხატა. ეს არის React-ის იდეა გამარტივებული სახით. ვკითხოთ: რამდენ ადგილს ვაახლებთ ხელით? — არცერთს.">
+  <div class="kicker rise">ცოცხალი დემო</div>
+  <h2 class="rise">state იცვლება → UI თავიდან იხატება</h2>
+  <div class="demo rise">
+    <div>
+      <div class="code-title">state</div>
+      <div class="state-box" id="demoState"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+        <button class="btn" data-city="ყველა">ყველა</button>
+        <button class="btn" data-city="თბილისი">თბილისი</button>
+        <button class="btn" data-city="ბათუმი">ბათუმი</button>
+        <button class="btn" data-city="ქუთაისი">ქუთაისი</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="btn" id="demoCheap">მხოლოდ ≤ 100 ₾</button>
+      </div>
+    </div>
+    <div class="phone" id="demoUI"></div>
+  </div>
+</section>
+
+<!-- 10. სექცია -->
+<section class="slide section-slide" data-notes="მეორე ნაწილი: რა არის React.">
+  <div class="big rise">02</div>
+  <h1 class="rise">რა არის React?</h1>
+</section>
+
+<!-- 11. განმარტება -->
+<section class="slide" data-notes="განმარტება react.dev-დან: The library for web and native user interfaces. ორი სიტყვა გავუსვათ ხაზი: ბიბლიოთეკა და UI. სახელი React მოდის იქიდან, რომ ის „რეაგირებს“ state-ის ცვლილებაზე და UI-ს ახლიდან არენდერებს.">
+  <div class="kicker rise">განმარტება</div>
+  <h1 class="rise" style="font-size:58px;max-width:1050px;margin-top:40px">React არის <span class="acc">JavaScript ბიბლიოთეკა</span> მომხმარებლის ინტერფეისების ასაწყობად</h1>
+  <p class="lead rise" style="margin-top:34px">სახელი შემთხვევითი არ არის: როცა state იცვლება, React <b style="color:var(--text)">რეაგირებს</b> და UI-ს თავიდან არენდერებს.</p>
+  <div class="grid g2 rise" style="margin-top:44px;max-width:900px">
+    <div class="card"><h3>1. Render</h3><p>კომპონენტებს აჩვენებს მიმდინარე state-ის მიხედვით</p></div>
+    <div class="card"><h3>2. Re-render</h3><p>UI-ს state-თან სინქრონში ინახავს</p></div>
+  </div>
+</section>
+
+<!-- 12. 6 მახასიათებელი -->
+<section class="slide" data-notes="React-ის ექვსი მთავარი მახასიათებელი, კურსის სლაიდების მიხედვით. თითოეულს მოკლედ ავხსნით, დეტალურად შემდეგ ლექციებში ვისწავლით.">
+  <div class="kicker rise">6 მახასიათებელი</div>
+  <h2 class="rise">რით გამოირჩევა React</h2>
+  <div class="grid g3 rise" style="gap:18px">
+    <div class="card"><h3>🧱 კომპონენტებზე</h3><p>UI იკრიბება პატარა, ხელახლა გამოყენებადი ნაწილებისგან</p></div>
+    <div class="card"><h3>📝 დეკლარაციული</h3><p>ვაღწერთ, როგორი უნდა იყოს UI — DOM-ს არ ვეხებით</p></div>
+    <div class="card"><h3>🔁 State-driven</h3><p>state იცვლება → React UI-ს თავიდან ხატავს</p></div>
+    <div class="card"><h3>⟨/⟩ JSX</h3><p>HTML-ის მსგავსი სინტაქსი JavaScript-ის შიგნით</p></div>
+    <div class="card"><h3>📚 ბიბლიოთეკა</h3><p>მხოლოდ „view“ შრე — დანარჩენს ჩვენ ვირჩევთ</p></div>
+    <div class="card"><h3>🌍 პოპულარული</h3><p>უდიდესი საზოგადოება, ეკოსისტემა და სამუშაო ბაზარი</p></div>
+  </div>
+</section>
+
+<!-- 13. კომპონენტები -->
+<section class="slide" data-notes="კომპონენტი არის UI-ს ნაწილი, რომელსაც აქვს საკუთარი მონაცემები, ლოგიკა და გარეგნობა. ავიღოთ ვიდეო-საიტი და დავყოთ: App → Header, VideoPlayer, Sidebar → VideoCard, CommentList → Comment. Comment და VideoCard მრავალჯერ გამოიყენება. ეს არის კომპონენტების ხე: მშობელი და შვილი კომპონენტები.">
+  <div class="kicker rise">კომპონენტები</div>
+  <h2 class="rise">UI = კომპონენტების „ლეგო“</h2>
+  <div class="grid rise" style="grid-template-columns:1.25fr 1fr;gap:34px;align-items:start">
+    <div class="mock">
+      <div class="box c1" style="grid-column:1/3"><span class="lbl">&lt;Header /&gt;</span></div>
+      <div style="display:grid;grid-template-rows:1fr 120px;gap:12px">
+        <div class="box c2"><span class="lbl">&lt;VideoPlayer /&gt;</span></div>
+        <div class="box c3" style="flex-direction:column;gap:6px"><span class="lbl">&lt;CommentList /&gt;</span>
+          <div style="display:flex;gap:6px;width:100%"><div class="box" style="flex:1;padding:4px 6px"><span class="lbl" style="font-size:12px">&lt;Comment /&gt;</span></div><div class="box" style="flex:1;padding:4px 6px"><span class="lbl" style="font-size:12px">&lt;Comment /&gt;</span></div></div>
+        </div>
+      </div>
+      <div class="box c4" style="flex-direction:column;gap:8px"><span class="lbl">&lt;Sidebar /&gt;</span>
+        <div class="box" style="width:100%;height:60px"><span class="lbl" style="font-size:12px">&lt;VideoCard /&gt;</span></div>
+        <div class="box" style="width:100%;height:60px"><span class="lbl" style="font-size:12px">&lt;VideoCard /&gt;</span></div>
+        <div class="box" style="width:100%;height:60px"><span class="lbl" style="font-size:12px">&lt;VideoCard /&gt;</span></div>
+      </div>
+    </div>
+    <div>
+      <ul class="clean">
+        <li>კომპონენტი = <b>მონაცემი + ლოგიკა + გარეგნობა</b></li>
+        <li>კომპონენტები <b>ერთმანეთში ჩაიდგმება</b> და ქმნის ხეს</li>
+        <li>ერთი კომპონენტი <b>მრავალჯერ</b> გამოიყენება (VideoCard, Comment)</li>
+        <li>მონაცემი მშობლიდან შვილს <b>props</b>-ით გადაეცემა</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 14. State-driven ციკლი -->
+<section class="slide" data-notes="React-ის გული — ციკლი. 1) კომპონენტები JSX-ით რენდერდება state-ის მიხედვით. 2) მომხმარებელი რაღაცას აკეთებს (მაგ. ძიება). 3) ვაახლებთ state-ს. 4) React ავტომატურად აკეთებს re-render-ს. და ციკლი თავიდან იწყება. ჩვენ მხოლოდ state-ს ვმართავთ.">
+  <div class="kicker rise">State-driven</div>
+  <h2 class="rise">React რეაგირებს state-ის ცვლილებაზე</h2>
+  <div class="grid rise" style="grid-template-columns:540px 1fr;gap:40px;align-items:center">
+    <svg viewBox="0 0 540 420" style="width:100%" aria-label="render, მოქმედება, state-ის განახლება, re-render">
+      <defs><marker id="cy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+      <circle cx="270" cy="210" r="150" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="6 8"/>
+      <g fill="none" stroke="var(--accent)" stroke-width="3">
+        <path d="M352 86 A150 150 0 0 1 412 160" marker-end="url(#cy)"/>
+        <path d="M412 262 A150 150 0 0 1 352 334" marker-end="url(#cy)"/>
+        <path d="M188 334 A150 150 0 0 1 128 262" marker-end="url(#cy)"/>
+        <path d="M128 160 A150 150 0 0 1 188 86" marker-end="url(#cy)"/>
+      </g>
+      <g font-family="Noto Sans Georgian" text-anchor="middle">
+        <rect x="190" y="30" width="160" height="62" rx="14" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/>
+        <text x="270" y="58" font-size="19" font-weight="800" fill="var(--text)">1. Render</text><text x="270" y="80" font-size="14" fill="var(--muted)">JSX → UI</text>
+        <rect x="380" y="180" width="150" height="62" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+        <text x="455" y="208" font-size="19" font-weight="800" fill="var(--text)">2. მოქმედება</text><text x="455" y="230" font-size="14" fill="var(--muted)">კლიკი, ძიება</text>
+        <rect x="190" y="328" width="160" height="62" rx="14" fill="var(--surface)" stroke="var(--amber)" stroke-width="2"/>
+        <text x="270" y="356" font-size="19" font-weight="800" fill="var(--text)">3. State ↻</text><text x="270" y="378" font-size="14" fill="var(--muted)">setState(...)</text>
+        <rect x="10" y="180" width="150" height="62" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+        <text x="85" y="208" font-size="19" font-weight="800" fill="var(--text)">4. Re-render</text><text x="85" y="230" font-size="14" fill="var(--muted)">ავტომატურად</text>
+      </g>
+    </svg>
+    <div>
+      <p style="margin-bottom:20px">ჩვენ ვმართავთ <b class="acc">მხოლოდ state-ს</b>.</p>
+      <p style="margin-bottom:20px">React თვითონ წყვეტს, <b>რა</b> შეიცვალა ეკრანზე და <b>როგორ</b> განაახლოს.</p>
+      <p class="callout">ამიტომ ჰქვია <b>React</b> — ის „რეაგირებს“.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 15. ბიბლიოთეკა vs ფრეიმვორკი -->
+<section class="slide" data-notes="React ბიბლიოთეკაა და არა ფრეიმვორკი, რადგან მხოლოდ view შრეს გვაძლევს. როუტინგისთვის, მონაცემების წამოსაღებად, სტილისთვის დამატებით ბიბლიოთეკებს ვირჩევთ. სრული ფრეიმვორკები React-ის ზედაა აშენებული: Next.js, React Router (framework mode). React-ის გუნდი ახალ პროდუქტებს ფრეიმვორკს ურჩევს, მაგრამ სასწავლად ჯერ სუფთა React-ს ვსწავლობთ.">
+  <div class="kicker rise">ბიბლიოთეკა თუ ფრეიმვორკი?</div>
+  <h2 class="rise">React მხოლოდ „view“ შრეა</h2>
+  <div class="grid g2 rise" style="gap:30px">
+    <div class="card">
+      <h3>ეკოსისტემა — ვირჩევთ თვითონ</h3>
+      <p style="margin-bottom:16px">რაც React-ში არ არის, ცალკე ბიბლიოთეკით ემატება:</p>
+      <span class="chip">React Router</span><span class="chip">TanStack Query</span><span class="chip">Redux Toolkit</span><span class="chip">Tailwind CSS</span><span class="chip">Styled Components</span>
+    </div>
+    <div class="card hl">
+      <h3>React-ის ფრეიმვორკები</h3>
+      <p style="margin-bottom:16px">სრული გადაწყვეტა რეალური პროდუქტებისთვის:</p>
+      <span class="chip on">Next.js</span><span class="chip on">React Router (framework)</span><span class="chip on">Expo (mobile)</span>
+    </div>
+  </div>
+  <p class="callout rise" style="margin-top:28px">სასწავლად ჯერ ვსწავლობთ <b>სუფთა React-ს</b> — ფრეიმვორკი მის ცოდნას მოითხოვს.</p>
+</section>
+
+<!-- 16. ისტორია -->
+<section class="slide" data-notes="React შექმნა Facebook-ის ინჟინერმა Jordan Walke-მა 2011-ში, ღია კოდით 2013-ში გამოვიდა. 2019 — Hooks (React 16.8), რასაც ამ კურსში ყველგან გამოვიყენებთ. 2024 დეკემბერი — React 19. 2025 თებერვალი — Create React App მოძველებულად გამოცხადდა. 2026 თებერვლიდან React-ს მართავს დამოუკიდებელი React Foundation (Linux Foundation). ბოლო ვერსია — 19.3 (2026 სექტემბერი).">
+  <div class="kicker rise">ისტორია</div>
+  <h2 class="rise">15 წელი React-ის ცხოვრებაში</h2>
+  <div class="timeline rise">
+    <div class="tl"><div class="y">2011</div><div class="dot"></div><p>Jordan Walke ქმნის Facebook-ში</p></div>
+    <div class="tl"><div class="y">2013</div><div class="dot"></div><p>ღია კოდი (open source)</p></div>
+    <div class="tl"><div class="y">2015</div><div class="dot"></div><p>React Native — მობილური აპები</p></div>
+    <div class="tl"><div class="y">2019</div><div class="dot"></div><p>Hooks (16.8) — useState, useEffect</p></div>
+    <div class="tl"><div class="y">2024</div><div class="dot"></div><p>React 19 (დეკემბერი)</p></div>
+    <div class="tl"><div class="y">2025</div><div class="dot"></div><p>Create React App მოძველდა</p></div>
+    <div class="tl"><div class="y">2026</div><div class="dot"></div><p>React Foundation (Linux Foundation)</p></div>
+    <div class="tl now"><div class="y">დღეს</div><div class="dot"></div><p><b>React 19.3</b><br>9 სექტ. 2026</p></div>
+  </div>
+</section>
+
+<!-- 17. პოპულარობა -->
+<section class="slide" data-notes="Stack Overflow Developer Survey 2025: React-ს იყენებს დეველოპერების 46.9% — ყველაზე მაღალი მაჩვენებელი ვებ ფრეიმვორკებს შორის. Next.js, რომელიც თავად React-ზეა აშენებული, 21.5%. Vue — 18.4%. ეს ნიშნავს დიდ სამუშაო ბაზარს და უზარმაზარ ეკოსისტემას.">
+  <div class="kicker rise">პოპულარობა</div>
+  <h2 class="rise">ყველაზე გამოყენებადი ვებ ტექნოლოგია</h2>
+  <p class="muted rise small" style="margin:-12px 0 26px">Stack Overflow Developer Survey 2025 · დეველოპერების წილი, ვინც იყენებს</p>
+  <div class="bars rise" id="bars">
+    <div class="bar main"><span><b>React</b></span><div class="track"><div class="fill" data-w="46.9"></div></div><span class="v">46.9%</span></div>
+    <div class="bar"><span>Next.js</span><div class="track"><div class="fill" data-w="21.5"></div></div><span class="v">21.5%</span></div>
+    <div class="bar"><span>Vue.js</span><div class="track"><div class="fill" data-w="18.4"></div></div><span class="v">18.4%</span></div>
+  </div>
+  <p class="callout rise" style="margin-top:34px">Next.js თავადაც <b>React-ზეა</b> აშენებული — React-ის ცოდნა ორივეს გიხსნის.</p>
+</section>
+
+<!-- 18. სექცია -->
+<section class="slide section-slide" data-notes="მესამე ნაწილი: პრაქტიკა. ჯერ React ერთ HTML ფაილში, მერე ნამდვილი პროექტი Vite-ით.">
+  <div class="big rise">03</div>
+  <h1 class="rise">დავიწყოთ კოდი</h1>
+</section>
+
+<!-- 19. Pure React -->
+<section class="slide" data-notes="React უბრალო JavaScript-ია: არ გვჭირდება npm და build. კურსი აქ React 18-ის UMD სკრიპტებს იყენებს, მაგრამ React 19-დან UMD აღარ გამოდის — ოფიციალური გაიდი ESM CDN-ს გვირჩევს (esm.sh). ყურადღება: JSX არ გვაქვს, ამიტომ ვწერთ React.createElement-ს. ვკითხოთ: როგორ დავწეროთ ასე დიდი აპი? — სწორედ ამიტომ გვჭირდება JSX და build ინსტრუმენტი. გახსენით Live Server-ით.">
+  <div class="kicker rise">Pure React</div>
+  <h2 class="rise">React ერთ HTML ფაილში — build-ის გარეშე</h2>
+  <div class="grid rise" style="grid-template-columns:1.45fr 1fr;gap:28px;align-items:start">
+<pre class="code" data-lang="js" style="font-size:15.5px">&lt;div id="root"&gt;&lt;/div&gt;
+&lt;script type="module"&gt;
+  import React from "https://esm.sh/react@19/?dev";
+  import ReactDOM from "https://esm.sh/react-dom@19/client?dev";
+
+  function App() {
+    const [time, setTime] = React.useState(new Date().toLocaleTimeString());
+    React.useEffect(() =&gt; {
+      const id = setInterval(() =&gt; setTime(new Date().toLocaleTimeString()), 1000);
+      return () =&gt; clearInterval(id);
+    }, []);
+    return React.createElement("header", null, `ახლა არის ${time}`);
+  }
+
+  ReactDOM.createRoot(document.getElementById("root"))
+    .render(React.createElement(App));
+&lt;/script&gt;</pre>
+    <div>
+      <ul class="clean small">
+        <li style="font-size:19px"><b>App</b> — ჩვეულებრივი ფუნქცია = კომპონენტი</li>
+        <li style="font-size:19px"><b>useState</b> ინახავს დროს, ყოველ წამში ახლდება</li>
+        <li style="font-size:19px"><b>createRoot().render()</b> React-ს #root-ზე „ამაგრებს“</li>
+      </ul>
+      <div class="callout" style="font-size:17px;margin-top:10px"><b>2026:</b> React 19-დან UMD სკრიპტები აღარ გამოდის — ვიყენებთ <span class="mono">esm.sh</span>-ს</div>
+    </div>
+  </div>
+</section>
+
+<!-- 20. CRA vs Vite -->
+<section class="slide" data-notes="კურსის პირველი სექციები Create React App-ს იყენებს. 2025 წლის 14 თებერვალს React-ის გუნდმა CRA მოძველებულად გამოაცხადა: აქტიური მხარდამჭერი აღარ ჰყავს, ინსტალაციისას გაფრთხილებას აჩვენებს. ჩვენ ვიყენებთ Vite-ს — ძალიან სწრაფი dev სერვერი და HMR. რეალური პროდუქტისთვის — Next.js ან React Router.">
+  <div class="kicker rise">პროექტის შექმნა 2026-ში</div>
+  <h2 class="rise">რით შევქმნათ React პროექტი</h2>
+  <table class="t rise">
+    <thead><tr><th>ინსტრუმენტი</th><th>სტატუსი</th><th>როდის</th></tr></thead>
+    <tbody>
+      <tr><td>Create React App</td><td><span class="tag bad">მოძველებული · 2025</span></td><td class="muted">მხოლოდ ძველ პროექტებსა და გაკვეთილებში შეხვდებით</td></tr>
+      <tr class="hl"><td>Vite</td><td><span class="tag good">ვიყენებთ ამ კურსში</span></td><td>სწავლა, ექსპერიმენტები, SPA. სწრაფი dev სერვერი და HMR</td></tr>
+      <tr><td>Next.js / React Router</td><td><span class="tag">ფრეიმვორკი</span></td><td class="muted">რეალური პროდუქტები: როუტინგი, SSR, მონაცემები</td></tr>
+    </tbody>
+  </table>
+  <p class="muted small rise" style="margin-top:22px">წყარო: react.dev/blog/2025/02/14/sunsetting-create-react-app</p>
+</section>
+
+<!-- 21. Vite პრაქტიკა -->
+<section class="slide" data-notes="ერთად ვაკეთებთ. ჯერ node -v (საჭიროა 20.19+ ან 22.12+). შემდეგ npm create vite@latest, cd, npm install, npm run dev და ვხსნით localhost:5173-ს. ვაჩვენოთ სტრუქტურა: index.html — ერთადერთი HTML; src/main.jsx — React-ს #root-ზე ამაგრებს; src/App.jsx — მთავარი კომპონენტი. შევცვალოთ ტექსტი App.jsx-ში და ვნახოთ, რომ ბრაუზერი მყისიერად ახლდება — HMR.">
+  <div class="kicker rise">პრაქტიკა</div>
+  <h2 class="rise">პირველი პროექტი Vite-ით</h2>
+  <div class="grid rise" style="grid-template-columns:1.2fr 1fr;gap:28px;align-items:start">
+    <div>
+      <div class="code-title">ტერმინალი · Node.js 20.19+ / 22.12+</div>
+<pre class="code" data-lang="sh">node -v
+npm create vite@latest my-first-react -- --template react
+cd my-first-react
+npm install
+npm run dev     <span class="c"># → http://localhost:5173</span></pre>
+      <div class="callout" style="margin-top:20px;font-size:19px">შეცვალეთ ტექსტი <span class="mono">App.jsx</span>-ში და შეინახეთ — გვერდი მყისიერად განახლდება (<b>HMR</b>).</div>
+    </div>
+    <div class="tree">
+<span class="d">my-first-react/</span><br>
+├─ <span class="d">public/</span><br>
+├─ <span class="d">src/</span><br>
+│&nbsp;&nbsp;├─ <b>App.jsx</b> <span class="m">← მთავარი კომპონენტი</span><br>
+│&nbsp;&nbsp;├─ App.css<br>
+│&nbsp;&nbsp;├─ <b>main.jsx</b> <span class="m">← createRoot</span><br>
+│&nbsp;&nbsp;└─ index.css<br>
+├─ <b>index.html</b> <span class="m">← &lt;div id="root"&gt;</span><br>
+├─ package.json<br>
+└─ vite.config.js
+    </div>
+  </div>
+</section>
+
+<!-- 22. დოკუმენტაცია -->
+<section class="slide" data-notes="ოფიციალური დოკუმენტაცია: react.dev (ძველი reactjs.org აღარ გამოიყენება). მოკლედ ვაჩვენოთ სამი ნაწილი: Learn — სახელმძღვანელო, Reference — API-ის აღწერა, Blog — სიახლეები (React 19.3, CRA). კურსის რჩევა: დოკუმენტაცია სწავლის დროს ყოველთვის გახსნილი გქონდეთ.">
+  <div class="kicker rise">დოკუმენტაცია</div>
+  <h2 class="rise">react.dev — თქვენი მთავარი წყარო</h2>
+  <div class="grid g3 rise">
+    <div class="card"><span class="tag">LEARN</span><h3 style="margin-top:14px">სახელმძღვანელო</h3><p>Quick Start, Thinking in React, ინტერაქტიული მაგალითები</p></div>
+    <div class="card"><span class="tag">REFERENCE</span><h3 style="margin-top:14px">API</h3><p>ყველა hook და კომპონენტი: useState, useEffect…</p></div>
+    <div class="card"><span class="tag">BLOG</span><h3 style="margin-top:14px">სიახლეები</h3><p>ახალი ვერსიები და ცვლილებები</p></div>
+  </div>
+  <p class="callout rise" style="margin-top:30px">რჩევა: დოკუმენტაცია სწავლის დროს <b>ყოველთვის გახსნილი</b> გქონდეთ. ძველი <span class="mono">reactjs.org</span> აღარ გამოიყენება.</p>
+</section>
+
+<!-- 23. შეჯამება -->
+<section class="slide" data-notes="შეჯამება: React-ის ორი მთავარი სამუშაო — კომპონენტების ჩვენება state-ის მიხედვით და UI-ს სინქრონში შენარჩუნება re-render-ით. შემდეგ ლექციაზე: JavaScript-ის გამეორება React-ისთვის (კურსის სექცია 4).">
+  <div class="kicker rise">შეჯამება</div>
+  <h2 class="rise">React-ის ორი მთავარი საქმე</h2>
+  <div class="grid g2 rise" style="gap:26px">
+    <div class="card hl"><div class="num">1</div><h3>Render</h3><p>კომპონენტებს აჩვენებს მიმდინარე <b style="color:var(--text)">state</b>-ის მიხედვით</p></div>
+    <div class="card hl"><div class="num">2</div><h3>Re-render</h3><p>UI-ს სინქრონში ინახავს — <b style="color:var(--text)">რეაგირებს</b>, როცა state იცვლება</p></div>
+  </div>
+  <div class="rise" style="margin-top:34px">
+    <p class="muted small" style="margin-bottom:12px">დღეს ვისწავლეთ:</p>
+    <span class="chip">SPA</span><span class="chip">იმპერატიული vs დეკლარაციული</span><span class="chip">კომპონენტები</span><span class="chip">JSX</span><span class="chip">state</span><span class="chip">esm.sh</span><span class="chip on">Vite</span>
+  </div>
+</section>
+
+<!-- 24. კითხვები + დავალება -->
+<section class="slide" data-notes="შემოწმების კითხვები ზეპირად. შემდეგ საშინაო დავალება. შემდეგი ლექცია: JavaScript-ის გამეორება — destructuring, spread, map/filter, async/await.">
+  <div class="kicker rise">კითხვები და დავალება</div>
+  <h2 class="rise">შევამოწმოთ ცოდნა</h2>
+  <div class="grid g2 rise" style="gap:30px">
+    <div>
+      <h3 style="margin-bottom:14px">კითხვები</h3>
+      <ol style="padding-left:26px">
+        <li style="font-size:19px;margin-bottom:8px">რა პრობლემას ჭრის ფრეიმვორკი?</li>
+        <li style="font-size:19px;margin-bottom:8px">რით განსხვავდება SPA server-rendered საიტისგან?</li>
+        <li style="font-size:19px;margin-bottom:8px">რას ნიშნავს „დეკლარაციული“?</li>
+        <li style="font-size:19px;margin-bottom:8px">React ბიბლიოთეკაა თუ ფრეიმვორკი? რატომ?</li>
+        <li style="font-size:19px">რატომ აღარ ვიყენებთ Create React App-ს?</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px">საშინაო დავალება</h3>
+      <ul class="clean">
+        <li style="font-size:18px;margin-bottom:10px">შექმენით Vite + React პროექტი</li>
+        <li style="font-size:18px;margin-bottom:10px">Pure React საათს დაუმატეთ თარიღი</li>
+        <li style="font-size:18px;margin-bottom:10px">დახატეთ ერთი საიტის კომპონენტების ხე (მინ. 6)</li>
+        <li style="font-size:18px">წაიკითხეთ react.dev → Quick Start</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div></div>
+
+<div id="notes" aria-live="polite"><h4>სპიკერის შენიშვნები</h4><div id="notesText"></div></div>
+<div id="hud">
+  <span id="counter">1 / 1</span>
+  <button id="bPrev" title="წინა (←)">←</button>
+  <button id="bNext" title="შემდეგი (→)">→</button>
+  <button id="bNotes" title="შენიშვნები (N)">N</button>
+  <button id="bTheme" title="თემა (T)">◐</button>
+  <button id="bFull" title="სრული ეკრანი (F)">⛶</button>
+  <button id="bHelp" title="დახმარება (?)">?</button>
+</div>
+<div id="help"><div class="card">
+  <h3 style="margin-bottom:12px">მართვა</h3>
+  <table>
+    <tr><td><kbd>→</kbd> <kbd>Space</kbd> <kbd>PgDn</kbd></td><td>შემდეგი სლაიდი</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>PgUp</kbd></td><td>წინა სლაიდი</td></tr>
+    <tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>პირველი / ბოლო</td></tr>
+    <tr><td><kbd>N</kbd></td><td>სპიკერის შენიშვნები</td></tr>
+    <tr><td><kbd>T</kbd></td><td>ღია / მუქი თემა (პროექტორისთვის)</td></tr>
+    <tr><td><kbd>F</kbd></td><td>სრული ეკრანი</td></tr>
+    <tr><td><kbd>?</kbd> <kbd>Esc</kbd></td><td>ეს ფანჯარა</td></tr>
+  </table>
+</div></div>
+
+<script>
+(() => {
+  const deck = document.getElementById("deck");
+  const slides = [...document.querySelectorAll(".slide")];
+  const progress = document.getElementById("progress");
+  const counter = document.getElementById("counter");
+  const notes = document.getElementById("notes");
+  const notesText = document.getElementById("notesText");
+  const help = document.getElementById("help");
+  let i = 0;
+
+  /* --- უსაფრთხო localStorage --- */
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+  };
+
+  /* --- მასშტაბირება --- */
+  function fit(){
+    const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    deck.style.transform = `scale(${s})`;
+  }
+  window.addEventListener("resize", fit); fit();
+
+  /* --- კოდის მარტივი გაფერადება --- */
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const re = /(\/\/[^\n]*|#[^\n]*$)|(`[^`]*`|"[^"\n]*"|'[^'\n]*')|(<\/?[A-Za-z][\w.]*|\/?>)|\b(const|let|var|function|return|import|from|new|export|default|if|else|npm|cd|node)\b|\b(\d+)\b/gm;
+  document.querySelectorAll("pre.code[data-lang]").forEach(pre => {
+    if (pre.querySelector("span")) return; // უკვე მონიშნულია
+    const raw = pre.textContent; let out = "", last = 0, m;
+    const isSh = pre.dataset.lang === "sh";
+    while ((m = re.exec(raw))) {
+      out += esc(raw.slice(last, m.index));
+      const [tok, com, str, tag, kw, num] = m;
+      if (com && (!com.startsWith("#") || isSh)) out += `<span class="c">${esc(tok)}</span>`;
+      else if (com) out += esc(tok);
+      else if (str) out += `<span class="s">${esc(tok)}</span>`;
+      else if (tag) out += `<span class="t">${esc(tok)}</span>`;
+      else if (kw) out += `<span class="k">${esc(tok)}</span>`;
+      else if (num) out += `<span class="n">${esc(tok)}</span>`;
+      last = m.index + tok.length;
+    }
+    pre.innerHTML = out + esc(raw.slice(last));
+  });
+
+  /* --- ნავიგაცია --- */
+  function go(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle("active", k === i));
+    progress.style.width = ((i + 1) / slides.length * 100) + "%";
+    counter.textContent = `${i + 1} / ${slides.length}`;
+    notesText.textContent = slides[i].dataset.notes || "—";
+    if (location.hash !== "#" + (i + 1)) history.replaceState(null, "", "#" + (i + 1));
+    // ბარების ანიმაცია
+    slides[i].querySelectorAll(".fill").forEach(f => { f.style.width = "0"; requestAnimationFrame(() => requestAnimationFrame(() => f.style.width = (f.dataset.w * 1.8) + "%")); });
+  }
+  const next = () => go(i + 1), prev = () => go(i - 1);
+  const toggleNotes = () => notes.classList.toggle("open");
+  const toggleTheme = () => {
+    const light = document.documentElement.dataset.theme !== "light";
+    if (light) document.documentElement.dataset.theme = "light"; else delete document.documentElement.dataset.theme;
+    store.set("react-deck-theme", light ? "light" : "dark");
+  };
+  const toggleFull = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); };
+
+  document.addEventListener("keydown", e => {
+    if (e.target.closest && e.target.closest("button") && (e.key === " " || e.key === "Enter")) return;
+    const k = e.key;
+    if (["ArrowRight","PageDown"," "].includes(k)) { e.preventDefault(); next(); }
+    else if (["ArrowLeft","PageUp"].includes(k)) { e.preventDefault(); prev(); }
+    else if (k === "Home") go(0);
+    else if (k === "End") go(slides.length - 1);
+    else if (k === "n" || k === "N") toggleNotes();
+    else if (k === "t" || k === "T") toggleTheme();
+    else if (k === "f" || k === "F") toggleFull();
+    else if (k === "?") help.classList.toggle("open");
+    else if (k === "Escape") help.classList.remove("open");
+  });
+  document.getElementById("bPrev").onclick = prev;
+  document.getElementById("bNext").onclick = next;
+  document.getElementById("bNotes").onclick = toggleNotes;
+  document.getElementById("bTheme").onclick = toggleTheme;
+  document.getElementById("bFull").onclick = toggleFull;
+  document.getElementById("bHelp").onclick = () => help.classList.toggle("open");
+  help.onclick = e => { if (e.target === help) help.classList.remove("open"); };
+
+  // სენსორული სვაიპი
+  let tx = null;
+  document.addEventListener("touchstart", e => tx = e.touches[0].clientX, {passive:true});
+  document.addEventListener("touchend", e => { if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) (dx < 0 ? next : prev)(); tx = null; });
+
+  window.addEventListener("hashchange", () => { const n = parseInt(location.hash.slice(1), 10); if (n && n - 1 !== i) go(n - 1); });
+
+  /* --- ცოცხალი დემო: state → render(state) --- */
+  const homes = [
+    { name:"ბინა ვაკეში", city:"თბილისი", price:140 },
+    { name:"სტუდიო სოლოლაკში", city:"თბილისი", price:85 },
+    { name:"ბინა ზღვასთან", city:"ბათუმი", price:120 },
+    { name:"ოთახი ძველ ბათუმში", city:"ბათუმი", price:60 },
+    { name:"სახლი ცენტრში", city:"ქუთაისი", price:70 },
+  ];
+  let state = { city:"ყველა", cheapOnly:false };
+  let renders = 0;
+  const ui = document.getElementById("demoUI");
+  const stateBox = document.getElementById("demoState");
+
+  function setState(patch){ state = { ...state, ...patch }; render(state); }
+
+  function render(s){
+    renders++;
+    const list = homes.filter(h => (s.city === "ყველა" || h.city === s.city) && (!s.cheapOnly || h.price <= 100));
+    stateBox.textContent = `state = {\n  city: "${s.city}",\n  cheapOnly: ${s.cheapOnly}\n}`;
+    ui.innerHTML =
+      `<div style="font-size:15px;color:var(--muted);margin-bottom:6px">UI = render(state)</div>` +
+      `<h3 style="margin-bottom:14px">${list.length} ბინა · ${esc(s.city)}</h3>` +
+      (list.length ? list.map(h => `<div class="listing"><span>${esc(h.name)}<br><small>${esc(h.city)}</small></span><b>${h.price} ₾</b></div>`).join("")
+                   : `<p class="muted">ვერაფერი მოიძებნა</p>`) +
+      `<div class="counter-render">render() გამოძახება: ${renders}</div>`;
+    ui.classList.remove("flash"); void ui.offsetWidth; ui.classList.add("flash");
+    document.querySelectorAll("[data-city]").forEach(b => b.classList.toggle("on", b.dataset.city === s.city));
+    document.getElementById("demoCheap").classList.toggle("on", s.cheapOnly);
+  }
+  document.querySelectorAll("[data-city]").forEach(b => b.onclick = () => setState({ city: b.dataset.city }));
+  document.getElementById("demoCheap").onclick = () => setState({ cheapOnly: !state.cheapOnly });
+  render(state);
+
+  /* --- გაშვება --- */
+  if (store.get("react-deck-theme") === "light") document.documentElement.dataset.theme = "light";
+  const start = parseInt(location.hash.slice(1), 10);
+  go(start ? start - 1 : 0);
+})();
+</script>
+</body>
+</html>

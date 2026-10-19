@@ -1,0 +1,673 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>React State ფარდის უკან</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@600;800&family=Noto+Sans+Georgian:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: ერთი სვეტი, ყოველი თემა = „სცენა“ — მარცხნივ ახსნა, მარჯვნივ ინტერაქტიული პანელი.
+   მოტივი: თეატრის ფარდა — ეკრანზე ჩანს შედეგი, ფარდის უკან React-ის მექანიზმი. */
+:root{
+  --paper:#f3f5f9; --panel:#ffffff; --sunk:#eaeef4; --ink:#15202d; --muted:#5a6779; --rule:#d7dee8;
+  --accent:#0a7d96; --curtain:#9b2c45; --curtain-2:#7c2037; --hot:#c97c00; --hot-bg:#fff3dc; --ok:#1f8a5b;
+  --code-bg:#14202d; --code-ink:#e3e9f1; --code-dim:#7d8ba0; --code-key:#ff9db2; --code-str:#a6e3a1; --code-tag:#7fd6ea;
+  --f-display:"Noto Serif Georgian", "Sylfaen", Georgia, serif;
+  --f-body:"Noto Sans Georgian", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", Consolas, "Courier New", monospace;
+  --r:12px; --gap:clamp(16px,3vw,28px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0f151d; --panel:#17202b; --sunk:#1e2834; --ink:#e6edf5; --muted:#97a5b7; --rule:#2b3746;
+  --accent:#4cc3dc; --curtain:#c2475f; --curtain-2:#8f2c42; --hot:#ffb340; --hot-bg:#3a2a10; --ok:#4fd18f;
+  --code-bg:#0b1118; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --paper:#0f151d; --panel:#17202b; --sunk:#1e2834; --ink:#e6edf5; --muted:#97a5b7; --rule:#2b3746;
+  --accent:#4cc3dc; --curtain:#c2475f; --curtain-2:#8f2c42; --hot:#ffb340; --hot-bg:#3a2a10; --ok:#4fd18f;
+  --code-bg:#0b1118; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(34px,6vw,58px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(24px,3.4vw,34px);font-weight:800}
+h3{font-size:17px;margin:0 0 6px}
+p{margin:0}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+p code,li code{background:var(--sunk);padding:1px 6px;border-radius:5px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--curtain);text-transform:uppercase}
+.muted{color:var(--muted)}
+a{color:var(--accent)}
+button{font:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ღილაკები */
+.btn{appearance:none;border:1px solid var(--rule);background:var(--panel);color:var(--ink);font-weight:700;font-size:15px;
+  padding:9px 16px;border-radius:10px;cursor:pointer;transition:border-color .15s, transform .1s}
+.btn:hover{border-color:var(--accent)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.btn.curtain{background:var(--curtain);border-color:var(--curtain);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* ---------- HERO ---------- */
+.hero{padding-block:48px 28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:var(--gap);align-items:center}
+.hero .lead{font-size:clamp(17px,2vw,20px);color:var(--muted);margin-top:16px;max-width:34em}
+.theatre{position:relative;background:var(--panel);border:1px solid var(--rule);border-radius:16px;overflow:hidden}
+.theatre .screen{padding:26px 22px 22px;text-align:center;border-bottom:1px solid var(--rule)}
+.theatre .screen .lbl{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.theatre .big{font-family:var(--f-display);font-size:64px;font-weight:800;line-height:1.1;margin:6px 0 12px;font-variant-numeric:tabular-nums}
+.backstage{position:relative;padding:18px 18px 20px;min-height:178px;background:var(--sunk)}
+.backstage ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.backstage li{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:9px;background:var(--panel);border:1px solid var(--rule);font-size:14.5px;opacity:.45;transition:opacity .25s,border-color .25s}
+.backstage li b{font-family:var(--f-mono);font-size:12px;color:var(--muted);min-width:18px}
+.backstage li.on{opacity:1;border-color:var(--accent)}
+.backstage li.done{opacity:.9}
+.drape{position:absolute;inset:0;display:flex;pointer-events:none}
+.drape i{flex:1;background:repeating-linear-gradient(90deg,var(--curtain) 0 14px,var(--curtain-2) 14px 28px);transition:transform .8s cubic-bezier(.6,.05,.3,1)}
+.drape i:first-child{transform-origin:left}
+.drape i:last-of-type{transform-origin:right}
+.drape .cap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-weight:700;font-size:15px;background:rgba(0,0,0,.28);padding:6px 14px;border-radius:999px;white-space:nowrap;transition:opacity .3s}
+.theatre.open .drape i:first-child{transform:translateX(-100%)}
+.theatre.open .drape i:last-of-type{transform:translateX(100%)}
+.theatre.open .drape .cap{opacity:0}
+
+/* ---------- სცენები ---------- */
+.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:6px 10px}
+.toc a{font-size:14px;font-weight:600;text-decoration:none;color:var(--ink);border:1px solid var(--rule);background:var(--panel);padding:5px 12px;border-radius:999px}
+.toc a:hover{border-color:var(--accent)}
+.scene{padding-block:44px 8px;border-top:1px solid var(--rule);margin-top:36px}
+.scene-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-bottom:20px;max-width:46em}
+.scene-head p{color:var(--muted);font-size:17px}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:clamp(14px,2.4vw,24px)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--gap)}
+.note{border-left:3px solid var(--hot);background:var(--hot-bg);padding:10px 14px;border-radius:0 10px 10px 0;font-size:15px}
+.k{font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+
+/* მეხსიერება / ეკრანი ყუთები */
+.mem,.scr{border-radius:10px;padding:12px 14px}
+.mem{background:var(--code-bg);color:var(--code-ink);font-family:var(--f-mono);font-size:14px}
+.mem .v{color:var(--code-tag);font-weight:600}
+.scr{border:2px solid var(--rule);background:var(--paper);text-align:center}
+.scr .num{font-family:var(--f-display);font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.pill{display:inline-block;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.pill.bad{color:var(--curtain)} .pill.good{color:var(--ok)}
+.flash{animation:flash .7s ease}
+@keyframes flash{0%{box-shadow:0 0 0 4px var(--hot);background:var(--hot-bg)}100%{box-shadow:0 0 0 0 transparent}}
+.shake{animation:shake .4s ease}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.stack{display:grid;gap:12px}
+
+/* ---------- PIPELINE ---------- */
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.steps button{border:1px solid var(--rule);background:var(--panel);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:13.5px;font-weight:700;cursor:pointer}
+.steps button.on{background:var(--curtain);border-color:var(--curtain);color:#fff}
+.steps button.done{color:var(--ink);border-color:var(--accent)}
+.caption{min-height:84px;margin-bottom:16px}
+.caption h3{font-family:var(--f-display);font-size:21px}
+.caption p{color:var(--muted)}
+.pipe{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,.8fr);gap:16px}
+.col .k{display:block;margin-bottom:8px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:12px 0;font-family:var(--f-mono);font-size:13px;line-height:1.7;overflow-x:auto}
+pre.code span.ln{display:block;padding:0 14px;border-left:3px solid transparent;white-space:pre;transition:background .25s}
+pre.code span.ln.hl{background:rgba(255,179,64,.16);border-left-color:var(--hot)}
+pre.code .kw{color:var(--code-key)} pre.code .st{color:var(--code-str)} pre.code .tg{color:var(--code-tag)} pre.code .cm{color:var(--code-dim)}
+.react-box{background:var(--sunk);border-radius:12px;padding:12px;display:grid;gap:10px;min-height:100%}
+.queue{min-height:36px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.qitem{font-family:var(--f-mono);font-size:12.5px;padding:4px 9px;border-radius:7px;background:var(--panel);border:1px dashed var(--hot);color:var(--ink);animation:pop .3s ease}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
+.trees{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tree{background:var(--panel);border:1px solid var(--rule);border-radius:9px;padding:8px;font-family:var(--f-mono);font-size:12px;transition:opacity .3s}
+.tree .t{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;font-family:var(--f-body)}
+.tree .n{padding:3px 6px;border-radius:5px;margin-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+.tree .n.root{margin-left:0}
+.tree .n.same{color:var(--muted)}
+.tree .n.diff{background:var(--hot-bg);border-color:var(--hot);color:var(--ink);font-weight:600}
+.tree .n.scan{border-color:var(--accent)}
+.tree.ghost{opacity:.25}
+.dom{border:2px solid var(--rule);border-radius:12px;padding:14px;background:var(--paper);display:grid;gap:8px;text-align:center}
+.dom h4{margin:0;font-family:var(--f-display);font-size:18px}
+.dom .p{font-size:16px;border-radius:6px;padding:2px 4px}
+.dom .fake-btn{justify-self:center;border:1px solid var(--rule);background:var(--panel);border-radius:8px;padding:4px 16px;font-weight:700}
+.dom .fake-btn.press{animation:press .35s ease}
+@keyframes press{50%{transform:scale(.92);border-color:var(--accent)}}
+.dom-foot{font-size:12.5px;color:var(--muted);margin-top:8px}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px}
+.ctrl label{font-size:14px;color:var(--muted);display:flex;gap:6px;align-items:center}
+
+/* ---------- SNAPSHOT ---------- */
+.lanes{display:grid;gap:10px;margin-top:14px}
+.lane{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:40px;padding:8px 10px;background:var(--sunk);border-radius:10px}
+.lane .k{min-width:120px}
+.arrow{color:var(--muted)}
+.result{font-family:var(--f-display);font-weight:800;font-size:22px}
+
+/* ---------- IMMUTABILITY ---------- */
+.todo{list-style:none;padding:0;margin:0;display:grid;gap:6px;text-align:left}
+.todo li{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:6px 10px;font-size:15px}
+.todo li.new{border-color:var(--ok)}
+.ref{font-family:var(--f-mono);font-size:13px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--panel);border:1px solid var(--rule)}
+.ref.changed{border-color:var(--ok);color:var(--ok)}
+.ref.same{border-color:var(--curtain);color:var(--curtain)}
+.verdict{font-family:var(--f-mono);font-size:13.5px;padding:10px 12px;border-radius:10px;background:var(--code-bg);color:var(--code-ink);min-height:44px}
+
+/* ---------- TREE ---------- */
+.ctree{display:grid;gap:10px;justify-items:center;padding:8px 0}
+.lvl{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;position:relative}
+.cn{position:relative;font-family:var(--f-mono);font-size:13.5px;font-weight:600;padding:8px 12px;border-radius:10px;border:1.5px solid var(--rule);background:var(--panel);min-width:96px;text-align:center}
+.cn small{display:block;font-family:var(--f-body);font-weight:500;font-size:11.5px;color:var(--muted)}
+.cn.owner{border-color:var(--curtain);box-shadow:0 0 0 3px color-mix(in srgb,var(--curtain) 18%,transparent)}
+.cn.rerender{animation:flash .8s ease}
+.group{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:8px;border:1px dashed var(--rule);border-radius:12px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13.5px;color:var(--muted);margin-top:10px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend .l1::before{border:2px solid var(--curtain)}
+.legend .l2::before{background:var(--hot)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--panel);color:var(--ink);padding:8px 14px;font-weight:700;font-size:14px;cursor:pointer;font-family:var(--f-mono)}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--curtain);color:#fff}
+
+/* ---------- SUMMARY ---------- */
+.takeaways{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.takeaways .panel{display:grid;gap:4px;align-content:start}
+.takeaways .panel b{font-family:var(--f-display);font-size:18px}
+.takeaways .panel span{color:var(--muted);font-size:15px}
+.sources{margin-top:22px;font-size:14.5px;color:var(--muted)}
+.sources ul{margin:6px 0 0;padding-left:20px}
+
+@media (max-width:860px){
+  .hero,.split{grid-template-columns:minmax(0,1fr)}
+  .pipe{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+
+<div class="wrap">
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div>
+    <div class="eyebrow">React · ლექცია 1-ის დანართი</div>
+    <h1>React State ფარდის უკან</h1>
+    <p class="lead">ეკრანზე მხოლოდ რიცხვი იცვლება. ამ დროს ფარდის უკან React ექვს ნაბიჯს გადის. დააჭირე <b>+1</b>-ს და ნახე, რა ხდება.</p>
+  </div>
+  <div class="theatre" id="theatre">
+    <div class="screen">
+      <div class="lbl">ეკრანი · რასაც მომხმარებელი ხედავს</div>
+      <div class="big" id="heroNum">0</div>
+      <button class="btn primary" id="heroBtn">+1</button>
+    </div>
+    <div class="backstage">
+      <ol id="heroSteps">
+        <li><b>1</b>კლიკი → onClick</li>
+        <li><b>2</b>setCount განახლებას რიგში აყენებს</li>
+        <li><b>3</b>Render: React კომპონენტს ხელახლა იძახებს</li>
+        <li><b>4</b>Diff: ძველი და ახალი ხის შედარება</li>
+        <li><b>5</b>Commit: DOM-ში იცვლება მხოლოდ რიცხვი</li>
+        <li><b>6</b>ბრაუზერი ხატავს ეკრანს</li>
+      </ol>
+      <div class="drape" aria-hidden="true"><i></i><i></i><span class="cap">ფარდის უკან</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="თემები">
+  <a href="#what">1. რა არის state</a>
+  <a href="#pipeline">2. ექვსი ნაბიჯი</a>
+  <a href="#snapshot">3. State არის კადრი</a>
+  <a href="#immutable">4. ნუ შეცვლი პირდაპირ</a>
+  <a href="#tree">5. Re-render ხეში</a>
+  <a href="#summary">შეჯამება</a>
+</nav>
+
+<!-- ================= 1. ცვლადი vs state ================= -->
+<section class="scene" id="what">
+  <div class="scene-head">
+    <div class="eyebrow">1 · რა არის state</div>
+    <h2>State არის მეხსიერება, რომელსაც React ახსოვს რენდერებს შორის</h2>
+    <p>ორივე მთვლელი ერთსა და იმავეს ცდილობს. მარცხნივ რიცხვი ჩვეულებრივ <code>let</code> ცვლადშია, მარჯვნივ — <code>useState</code>-ში. დააჭირე ორივეს და მერე „სხვა რამემ გამოიწვია re-render“.</p>
+  </div>
+  <div class="split">
+    <div class="panel stack" id="letDemo">
+      <div class="row" style="justify-content:space-between"><h3><code>let count = 0</code></h3><span class="pill bad">არ მუშაობს</span></div>
+      <div class="mem">მეხსიერება: count = <span class="v" data-mem>0</span></div>
+      <div class="scr"><div class="k">ეკრანი</div><div class="num" data-scr>0</div></div>
+      <div class="row"><button class="btn" data-inc>count++</button><button class="btn" data-rr>სხვა რამემ გამოიწვია re-render</button></div>
+      <p class="muted" data-msg style="font-size:14.5px;min-height:48px">ცვლადი იცვლება, მაგრამ React-მა ამის შესახებ არაფერი იცის — ეკრანი არ ახლდება.</p>
+    </div>
+    <div class="panel stack" id="stateDemo">
+      <div class="row" style="justify-content:space-between"><h3><code>useState(0)</code></h3><span class="pill good">მუშაობს</span></div>
+      <div class="mem">React-ის მეხსიერება: count = <span class="v" data-mem>0</span></div>
+      <div class="scr"><div class="k">ეკრანი</div><div class="num" data-scr>0</div></div>
+      <div class="row"><button class="btn primary" data-inc>setCount(count + 1)</button><button class="btn" data-rr>სხვა რამემ გამოიწვია re-render</button></div>
+      <p class="muted" data-msg style="font-size:14.5px;min-height:48px">setCount ორ რამეს აკეთებს: ინახავს ახალ მნიშვნელობას და React-ს ეუბნება, რომ კომპონენტი ხელახლა დახატოს.</p>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px">რენდერი ნიშნავს, რომ React კომპონენტის ფუნქციას თავიდან იძახებს. <code>let</code> ცვლადი ყოველ გამოძახებაზე თავიდან იქმნება და 0 ხდება. <code>useState</code>-ის მნიშვნელობა კომპონენტის გარეთ, React-თან ინახება.</p>
+</section>
+
+<!-- ================= 2. PIPELINE ================= -->
+<section class="scene" id="pipeline">
+  <div class="scene-head">
+    <div class="eyebrow">2 · ფარდის უკან</div>
+    <h2>ერთი კლიკი, ექვსი ნაბიჯი</h2>
+    <p>დააჭირე „გაუშვი“-ს ავტომატური ანიმაციისთვის, ან იარე ნაბიჯ-ნაბიჯ. მარცხნივ კოდია, შუაში React, მარჯვნივ ის, რასაც მომხმარებელი ხედავს.</p>
+  </div>
+  <div class="panel">
+    <div class="steps" id="stepBtns" role="tablist" aria-label="ნაბიჯები"></div>
+    <div class="caption" aria-live="polite"><h3 id="capTitle"></h3><p id="capText"></p></div>
+    <div class="pipe">
+      <div class="col"><span class="k">კოდი · Counter.jsx</span><pre class="code" id="pCode"></pre></div>
+      <div class="col"><span class="k">React · ფარდის უკან</span>
+        <div class="react-box">
+          <div><div class="k" style="margin-bottom:4px">განახლებების რიგი</div><div class="queue" id="pQueue"><span class="muted" style="font-size:13px">ცარიელია</span></div></div>
+          <div class="trees">
+            <div class="tree" id="oldTree"></div>
+            <div class="tree ghost" id="newTree"></div>
+          </div>
+          <div class="k" id="pPhase" style="color:var(--curtain)"></div>
+        </div>
+      </div>
+      <div class="col"><span class="k">ეკრანი · DOM</span>
+        <div class="dom"><h4>მთვლელი</h4><div class="p" id="domP">დაკლიკება: 0</div><div class="fake-btn" id="domBtn">+1</div></div>
+        <div class="dom-foot" id="domFoot">DOM-ში ცვლილება: 0-ჯერ</div>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="btn curtain" id="pRun">▶ გაუშვი (+1)</button>
+      <button class="btn" id="pPrev">← წინა</button>
+      <button class="btn" id="pNext">შემდეგი →</button>
+      <label for="pSpeed">სიჩქარე <select id="pSpeed" class="btn" style="padding:6px 8px"><option value="2200">ნელი</option><option value="1400" selected>ჩვეულებრივი</option><option value="700">სწრაფი</option></select></label>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. SNAPSHOT ================= -->
+<section class="scene" id="snapshot">
+  <div class="scene-head">
+    <div class="eyebrow">3 · State არის კადრი</div>
+    <h2>სამჯერ setCount(count + 1) — და მაინც +1</h2>
+    <p>ერთი რენდერის განმავლობაში <code>count</code> ფიქსირებული რიცხვია, ფოტოსავით. სამივე გამოძახება ერთსა და იმავე კადრს ხედავს. ფუნქცია <code>c =&gt; c + 1</code> კი წინა შედეგს იღებს.</p>
+  </div>
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div class="row"><span class="k">count ახლა</span><span class="result" id="snapNum">0</span></div>
+      <div class="row"><span class="pill" id="snapRenders">re-render: 0</span><button class="btn" id="snapReset">0-ზე დაბრუნება</button></div>
+    </div>
+    <div class="split" style="margin-top:14px">
+      <div class="stack">
+<pre class="code"><span class="ln"><span class="kw">function</span> handleClick() {</span><span class="ln">  setCount(count + 1);</span><span class="ln">  setCount(count + 1);</span><span class="ln">  setCount(count + 1);</span><span class="ln">}</span></pre>
+        <button class="btn" id="snapA">გაუშვი: count + 1 ×3</button>
+      </div>
+      <div class="stack">
+<pre class="code"><span class="ln"><span class="kw">function</span> handleClick() {</span><span class="ln">  setCount(c =&gt; c + 1);</span><span class="ln">  setCount(c =&gt; c + 1);</span><span class="ln">  setCount(c =&gt; c + 1);</span><span class="ln">}</span></pre>
+        <button class="btn primary" id="snapB">გაუშვი: c =&gt; c + 1 ×3</button>
+      </div>
+    </div>
+    <div class="lanes">
+      <div class="lane"><span class="k">რიგი</span><div class="queue" id="snapQueue" style="min-height:0"><span class="muted" style="font-size:13px">დააჭირე ერთ-ერთ ღილაკს</span></div></div>
+      <div class="lane"><span class="k">დამუშავება</span><div class="row" id="snapProc" style="gap:6px"></div></div>
+    </div>
+    <p class="note" style="margin-top:14px">სამივე setCount ერთ ივენთშია, ამიტომ React მათ აერთიანებს და კომპონენტს <b>ერთხელ</b> ხატავს. ამას ჰქვია <b>batching</b>. „re-render“ მრიცხველი ყოველ კლიკზე მხოლოდ 1-ით იზრდება.</p>
+  </div>
+</section>
+
+<!-- ================= 4. IMMUTABILITY ================= -->
+<section class="scene" id="immutable">
+  <div class="scene-head">
+    <div class="eyebrow">4 · Immutability</div>
+    <h2>ნუ შეცვლი state-ს პირდაპირ — შექმენი ახალი</h2>
+    <p>მასივის ან ობიექტის state-ის განახლებისას React ძველ და ახალ <b>მისამართს</b> (reference) ადარებს <code>Object.is</code>-ით. <code>push</code> იმავე მასივს ცვლის, ამიტომ React ცვლილებას ვერ ხედავს.</p>
+  </div>
+  <div class="split">
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between"><span class="k">მეხსიერება</span><span class="row" style="gap:6px"><span class="k">მისამართი</span><span class="ref" id="imRef">#A1</span></span></div>
+      <div class="mem" id="imMem" style="white-space:pre-wrap"></div>
+      <div class="row">
+        <button class="btn" id="imPush">todos.push(…); setTodos(todos)</button>
+        <button class="btn primary" id="imCopy">setTodos([...todos, …])</button>
+      </div>
+      <div class="verdict" id="imVerdict">// აირჩიე ერთ-ერთი გზა</div>
+    </div>
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between"><span class="k">ეკრანი</span><button class="btn" id="imReset">თავიდან</button></div>
+      <div class="scr" id="imScreen" style="text-align:left"><ul class="todo" id="imList"></ul></div>
+      <p class="muted" style="font-size:14.5px">მარცხენა ღილაკის შემდეგ მეხსიერებაში ჩანაწერი ემატება, ეკრანზე კი არა. მარჯვენა ღილაკი ახალ მასივს ქმნის და ეკრანიც ახლდება.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 5. TREE ================= -->
+<section class="scene" id="tree">
+  <div class="scene-head">
+    <div class="eyebrow">5 · Re-render ხეში</div>
+    <h2>State-ის ცვლილება ხეში ქვემოთ ვრცელდება</h2>
+    <p>როცა კომპონენტის state იცვლება, React ხელახლა ხატავს ამ კომპონენტს და ყველა მის შვილს. მშობლები და მეზობლები ხელუხლებელი რჩება. აირჩიე, სად ცხოვრობს state.</p>
+  </div>
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div class="row"><span class="k">state ცხოვრობს</span>
+        <div class="seg" id="ownerSeg" role="group" aria-label="state-ის მფლობელი">
+          <button aria-pressed="false" data-owner="App">App</button>
+          <button aria-pressed="true" data-owner="ProductList">ProductList</button>
+          <button aria-pressed="false" data-owner="Cart">Cart</button>
+        </div>
+      </div>
+      <button class="btn curtain" id="treeGo">setState()</button>
+    </div>
+    <div class="ctree" id="ctree" style="margin-top:18px">
+      <div class="lvl"><div class="cn" data-id="App">&lt;App/&gt;<small>რენდერი: <span>1</span></small></div></div>
+      <div class="lvl">
+        <div class="cn" data-id="Header" data-parent="App">&lt;Header/&gt;<small>რენდერი: <span>1</span></small></div>
+        <div class="cn" data-id="ProductList" data-parent="App">&lt;ProductList/&gt;<small>რენდერი: <span>1</span></small></div>
+        <div class="cn" data-id="Cart" data-parent="App">&lt;Cart/&gt;<small>რენდერი: <span>1</span></small></div>
+      </div>
+      <div class="lvl">
+        <div class="group">
+          <div class="cn" data-id="Card1" data-parent="ProductList">&lt;ProductCard/&gt;<small>რენდერი: <span>1</span></small></div>
+          <div class="cn" data-id="Card2" data-parent="ProductList">&lt;ProductCard/&gt;<small>რენდერი: <span>1</span></small></div>
+          <div class="cn" data-id="Card3" data-parent="ProductList">&lt;ProductCard/&gt;<small>რენდერი: <span>1</span></small></div>
+        </div>
+        <div class="group">
+          <div class="cn" data-id="CartItem" data-parent="Cart">&lt;CartItem/&gt;<small>რენდერი: <span>1</span></small></div>
+          <div class="cn" data-id="Total" data-parent="Cart">&lt;Total/&gt;<small>რენდერი: <span>1</span></small></div>
+        </div>
+      </div>
+    </div>
+    <div class="legend"><span class="l1">state-ის მფლობელი</span><span class="l2">ხელახლა დაიხატა</span></div>
+    <p class="note" style="margin-top:14px">ამიტომ state-ს ვინახავთ იქ, სადაც ის საჭიროა, რაც შეიძლება დაბლა ხეში. თუ state-ს App-ში აიტან, ყოველ ცვლილებაზე მთელი აპი ხელახლა დაიხატება.</p>
+  </div>
+</section>
+
+<!-- ================= SUMMARY ================= -->
+<section class="scene" id="summary">
+  <div class="scene-head">
+    <div class="eyebrow">შეჯამება</div>
+    <h2>ხუთი რამ, რაც state-ზე უნდა გახსოვდეს</h2>
+  </div>
+  <div class="takeaways">
+    <div class="panel"><b>State = React-ის მეხსიერება</b><span>ინახება რენდერებს შორის. ჩვეულებრივი ცვლადი ყოველ რენდერზე თავიდან იქმნება.</span></div>
+    <div class="panel"><b>setState იწვევს re-render-ს</b><span>React კომპონენტს თავიდან იძახებს, ადარებს ხეებს და DOM-ში მხოლოდ განსხვავებას ცვლის.</span></div>
+    <div class="panel"><b>State არის კადრი</b><span>ერთ რენდერში count ფიქსირებულია. წინა მნიშვნელობაზე დასაყრდნობად გამოიყენე <code>c =&gt; c + 1</code>.</span></div>
+    <div class="panel"><b>ახალი მასივი, ახალი ობიექტი</b><span><code>push</code>-ის ნაცვლად <code>[...arr, x]</code>, ობიექტისთვის <code>{...obj, key: v}</code>.</span></div>
+    <div class="panel"><b>Re-render ქვემოთ მიდის</b><span>კომპონენტთან ერთად ხელახლა იხატება მისი ყველა შვილი.</span></div>
+  </div>
+  <div class="sources">წყაროები (react.dev/learn):
+    <ul>
+      <li><a href="https://react.dev/learn/state-a-components-memory" target="_blank" rel="noopener">State: A Component's Memory</a></li>
+      <li><a href="https://react.dev/learn/render-and-commit" target="_blank" rel="noopener">Render and Commit</a></li>
+      <li><a href="https://react.dev/learn/state-as-a-snapshot" target="_blank" rel="noopener">State as a Snapshot</a></li>
+      <li><a href="https://react.dev/learn/queueing-a-series-of-state-updates" target="_blank" rel="noopener">Queueing a Series of State Updates</a></li>
+      <li><a href="https://react.dev/learn/updating-arrays-in-state" target="_blank" rel="noopener">Updating Arrays in State</a></li>
+    </ul>
+  </div>
+</section>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  const reflow = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+
+  /* ========== HERO ========== */
+  let heroN = 0, heroBusy = false;
+  const theatre = $("#theatre"), heroSteps = $$("#heroSteps li");
+  $("#heroBtn").addEventListener("click", async () => {
+    if (heroBusy) return; heroBusy = true;
+    theatre.classList.add("open");
+    heroSteps.forEach(li => li.classList.remove("on", "done"));
+    for (let k = 0; k < heroSteps.length; k++) {
+      heroSteps[k].classList.add("on");
+      if (k === 4) { heroN++; const el = $("#heroNum"); el.textContent = heroN; reflow(el, "flash"); }
+      await wait(520);
+      heroSteps[k].classList.replace("on", "done");
+    }
+    heroBusy = false;
+  });
+
+  /* ========== 1. let vs useState ========== */
+  function letDemo(root, isState) {
+    let mem = 0, screen = 0;
+    const m = $("[data-mem]", root), s = $("[data-scr]", root), msg = $("[data-msg]", root);
+    const draw = () => { m.textContent = mem; s.textContent = screen; };
+    $("[data-inc]", root).addEventListener("click", () => {
+      mem++;
+      if (isState) { screen = mem; reflow(s.parentElement, "flash"); msg.textContent = `React-მა კომპონენტი ხელახლა დახატა. ეკრანი = ${screen}.`; }
+      else { reflow(s.parentElement, "shake"); msg.textContent = `მეხსიერებაში count = ${mem}, მაგრამ re-render არ მომხდარა, ეკრანზე ისევ ${screen}-ია.`; }
+      draw(); reflow(m, "flash");
+    });
+    $("[data-rr]", root).addEventListener("click", () => {
+      if (isState) { screen = mem; msg.textContent = `React-მა count = ${mem} დაიმახსოვრა. re-render-ის შემდეგაც იგივეა.`; }
+      else { mem = 0; screen = 0; msg.textContent = "Re-render-ზე ფუნქცია თავიდან გაეშვა: let count = 0. ნაგროვები რიცხვი დაიკარგა."; }
+      draw(); reflow(s.parentElement, "flash");
+    });
+    draw();
+  }
+  letDemo($("#letDemo"), false);
+  letDemo($("#stateDemo"), true);
+
+  /* ========== 2. PIPELINE ========== */
+  const codeLines = [
+    '<span class="kw">function</span> Counter() {',
+    '  <span class="kw">const</span> [count, setCount] = useState(<span class="st">0</span>);',
+    '',
+    '  <span class="kw">function</span> handleClick() {',
+    '    setCount(count + <span class="st">1</span>);',
+    '  }',
+    '',
+    '  <span class="kw">return</span> (',
+    '    <span class="tg">&lt;div&gt;</span>',
+    '      <span class="tg">&lt;h2&gt;</span>მთვლელი<span class="tg">&lt;/h2&gt;</span>',
+    '      <span class="tg">&lt;p&gt;</span>დაკლიკება: {count}<span class="tg">&lt;/p&gt;</span>',
+    '      <span class="tg">&lt;button</span> onClick={handleClick}<span class="tg">&gt;</span>+1<span class="tg">&lt;/button&gt;</span>',
+    '    <span class="tg">&lt;/div&gt;</span>',
+    '  );',
+    '}'
+  ];
+  $("#pCode").innerHTML = codeLines.map(l => `<span class="ln">${l || " "}</span>`).join("");
+  const lnEls = $$("#pCode .ln");
+  const hl = nums => lnEls.forEach((el, k) => el.classList.toggle("hl", nums.includes(k + 1)));
+
+  const STEPS = [
+    { t: "0 · მოსვენებული მდგომარეობა", d: n => `ეკრანზე ჩანს count = ${n}. React-ს ახსოვს ბოლოს დახატული ხე. დააჭირე „გაუშვი“-ს.`, phase: "" },
+    { t: "1 · ივენთი", d: () => "მომხმარებელმა დააჭირა ღილაკს. ბრაუზერი ქმნის click ივენთს, React იძახებს onClick-ს, ანუ handleClick-ს.", phase: "ივენთის დამუშავება" },
+    { t: "2 · setCount", d: n => `setCount(${n} + 1) count-ს მყისიერად არ ცვლის. React განახლებას რიგში აყენებს და კომპონენტს re-render-ისთვის მონიშნავს. ამ რენდერში count ისევ ${n}-ია.`, phase: "განახლება რიგშია" },
+    { t: "3 · Render ფაზა", d: n => `React ხელახლა იძახებს Counter()-ს. ახლა useState აბრუნებს ${n + 1}-ს. ფუნქცია აბრუნებს ახალ JSX-ს, ანუ React ელემენტების ახალ ხეს (ხშირად Virtual DOM-ს ეძახიან).`, phase: "RENDER · Counter() გამოძახება" },
+    { t: "4 · Diff (reconciliation)", d: () => "React ძველ და ახალ ხეს ელემენტ-ელემენტ ადარებს. <div>, <h2> და <button> იგივეა. შეიცვალა მხოლოდ <p>-ის ტექსტი.", phase: "RECONCILIATION · შედარება" },
+    { t: "5 · Commit ფაზა", d: n => `React DOM-ში ცვლის მხოლოდ ერთ ტექსტს: „${n}“ → „${n + 1}“. <h2>-ს და <button>-ს არ ეხება. ამიტომ არის React სწრაფი.`, phase: "COMMIT · DOM-ის განახლება" },
+    { t: "6 · ბრაუზერი ხატავს", d: () => "ბრაუზერი ეკრანს ხელახლა ხატავს (paint). ამის შემდეგ ეშვება useEffect-ები. ახალი ხე ხდება „ძველი“ და React შემდეგ კლიკს ელოდება.", phase: "PAINT · მზადაა" }
+  ];
+  let base = 0, step = 0, domChanges = 0, running = false;
+  const stepBtns = $("#stepBtns");
+  STEPS.forEach((s, k) => {
+    const b = document.createElement("button");
+    b.textContent = k === 0 ? "0" : String(k);
+    b.setAttribute("role", "tab");
+    b.title = s.t;
+    b.addEventListener("click", () => { if (!running) show(k); });
+    stepBtns.appendChild(b);
+  });
+
+  const treeHTML = (title, n, opts = {}) => {
+    const cls = key => (opts[key] || "");
+    return `<div class="t">${title}</div>
+      <div class="n root ${cls("div")}">&lt;div&gt;</div>
+      <div class="n ${cls("h2")}">&lt;h2&gt; მთვლელი</div>
+      <div class="n ${cls("p")}">&lt;p&gt; დაკლიკება: ${n}</div>
+      <div class="n ${cls("btn")}">&lt;button&gt; +1</div>`;
+  };
+
+  function show(k) {
+    step = k;
+    const n = base;
+    $$("button", stepBtns).forEach((b, i) => { b.classList.toggle("on", i === k); b.classList.toggle("done", i < k); b.setAttribute("aria-selected", i === k); });
+    $("#capTitle").textContent = STEPS[k].t;
+    $("#capText").textContent = STEPS[k].d(n);
+    $("#pPhase").textContent = STEPS[k].phase;
+    const q = $("#pQueue"), oldT = $("#oldTree"), newT = $("#newTree"), domP = $("#domP");
+
+    // კოდის მონიშვნა
+    hl([[], [12, 4], [5], [1, 2, 8, 9, 10, 11, 12, 13], [9, 10, 11, 12], [11], []][k]);
+
+    // რიგი
+    q.innerHTML = (k === 2) ? `<span class="qitem">count: ${n} → ${n + 1}</span>`
+                : (k === 3) ? `<span class="qitem" style="opacity:.5">count: ${n} → ${n + 1} ✓</span>`
+                : `<span class="muted" style="font-size:13px">ცარიელია</span>`;
+
+    // ხეები
+    if (k <= 2) {
+      oldT.innerHTML = treeHTML("მიმდინარე ხე", n);
+      newT.innerHTML = treeHTML("ახალი ხე", "?"); newT.classList.add("ghost");
+    } else if (k === 3) {
+      oldT.innerHTML = treeHTML("ძველი ხე", n);
+      newT.innerHTML = treeHTML("ახალი ხე", n + 1); newT.classList.remove("ghost"); reflow(newT, "flash");
+    } else if (k === 4 || k === 5) {
+      const marks = { div: "same", h2: "same", p: "diff", btn: "same" };
+      oldT.innerHTML = treeHTML("ძველი ხე", n, marks);
+      newT.innerHTML = treeHTML("ახალი ხე", n + 1, marks); newT.classList.remove("ghost");
+    } else if (k === 6) {
+      oldT.innerHTML = treeHTML("მიმდინარე ხე", n + 1);
+      newT.innerHTML = treeHTML("ახალი ხე", "?"); newT.classList.add("ghost");
+    } else {
+      oldT.innerHTML = treeHTML("მიმდინარე ხე", n);
+    }
+
+    // DOM
+    if (k === 1) reflow($("#domBtn"), "press");
+    const shown = k >= 5 ? n + 1 : n;
+    if (domP.dataset.v !== String(shown)) {
+      domP.textContent = `დაკლიკება: ${shown}`;
+      if (k === 5) { domChanges++; reflow(domP, "flash"); }
+      domP.dataset.v = shown;
+    }
+    $("#domFoot").textContent = `DOM-ში შეცვლილი კვანძი: ${domChanges}-ჯერ (მხოლოდ ტექსტი)`;
+    $("#pPrev").disabled = running || k === 0;
+    $("#pNext").disabled = running;
+  }
+
+  function finishRound() { base = base + 1; show(0); }
+
+  $("#pNext").addEventListener("click", () => {
+    if (step < STEPS.length - 1) show(step + 1);
+    else finishRound();
+  });
+  $("#pPrev").addEventListener("click", () => { if (step > 0) { if (step === 5) domChanges = Math.max(0, domChanges - 1); show(step - 1); } });
+  $("#pRun").addEventListener("click", async () => {
+    if (running) return;
+    running = true; $("#pRun").disabled = true;
+    if (step >= 5) finishRound(); else if (step !== 0) show(0);
+    const ms = +$("#pSpeed").value;
+    for (let k = 1; k < STEPS.length; k++) { show(k); await wait(ms); }
+    running = false; $("#pRun").disabled = false;
+    finishRound();
+  });
+  $("#domP").dataset.v = "0";
+  show(0);
+
+  /* ========== 3. SNAPSHOT ========== */
+  let snap = 0, snapRenders = 0, snapBusy = false;
+  const snapQ = $("#snapQueue"), snapP = $("#snapProc");
+  const chip = (txt, cls = "qitem") => { const s = document.createElement("span"); s.className = cls; s.innerHTML = txt; return s; };
+  async function runSnap(updater) {
+    if (snapBusy) return; snapBusy = true;
+    $("#snapA").disabled = $("#snapB").disabled = true;
+    snapQ.innerHTML = ""; snapP.innerHTML = "";
+    const n = snap;
+    for (let i = 0; i < 3; i++) {
+      snapQ.appendChild(chip(updater ? "c =&gt; c + 1" : `${n} + 1 = <b>${n + 1}</b>`));
+      await wait(380);
+    }
+    let v = n;
+    snapP.appendChild(chip(`<span class="mono">${v}</span>`, "pill"));
+    for (let i = 0; i < 3; i++) {
+      await wait(450);
+      v = updater ? v + 1 : n + 1;
+      snapP.appendChild(chip("→", "arrow"));
+      snapP.appendChild(chip(`<span class="mono">${v}</span>`, "pill"));
+    }
+    await wait(350);
+    snap = v; snapRenders++;
+    const el = $("#snapNum"); el.textContent = snap; reflow(el, "flash");
+    $("#snapRenders").textContent = `re-render: ${snapRenders}`;
+    snapP.appendChild(chip(updater ? "&nbsp;+3 ✓" : "&nbsp;მხოლოდ +1", "pill " + (updater ? "good" : "bad")));
+    $("#snapA").disabled = $("#snapB").disabled = false; snapBusy = false;
+  }
+  $("#snapA").addEventListener("click", () => runSnap(false));
+  $("#snapB").addEventListener("click", () => runSnap(true));
+  $("#snapReset").addEventListener("click", () => {
+    if (snapBusy) return;
+    snap = 0; snapRenders = 0; $("#snapNum").textContent = 0; $("#snapRenders").textContent = "re-render: 0";
+    snapQ.innerHTML = '<span class="muted" style="font-size:13px">დააჭირე ერთ-ერთ ღილაკს</span>'; snapP.innerHTML = "";
+  });
+
+  /* ========== 4. IMMUTABILITY ========== */
+  const START = ["HTML-ის გამეორება", "Node.js-ის დაყენება", "Vite პროექტი"];
+  const EXTRA = ["useState-ის წაკითხვა", "კომპონენტების ხე", "react.dev Quick Start", "საშინაო დავალება", "JSX-ის წესები"];
+  let refN = 1, mem = [...START], screenList = [...START], extraI = 0;
+  const refName = () => "#" + String.fromCharCode(64 + ((refN - 1) % 26) + 1) + Math.ceil(refN / 26);
+  function drawIm(newIdx = -1) {
+    $("#imMem").textContent = `todos = [\n${mem.map(t => `  "${t}"`).join(",\n")}\n]`;
+    $("#imList").innerHTML = screenList.map((t, i) => `<li class="${i === newIdx ? "new" : ""}">${t}</li>`).join("");
+  }
+  $("#imPush").addEventListener("click", () => {
+    const item = EXTRA[extraI++ % EXTRA.length];
+    mem.push(item);
+    const r = $("#imRef"); r.textContent = refName(); r.className = "ref same"; reflow(r, "shake");
+    $("#imVerdict").innerHTML = `Object.is(ძველი ${refName()}, ახალი ${refName()}) → <b style="color:var(--curtain)">true</b><br>// იგივე მასივია. React განახლებას გამოტოვებს.`;
+    drawIm(); reflow($("#imMem"), "flash"); reflow($("#imScreen"), "shake");
+  });
+  $("#imCopy").addEventListener("click", () => {
+    const item = EXTRA[extraI++ % EXTRA.length];
+    const old = refName();
+    mem = [...mem, item]; refN++;
+    screenList = [...mem];
+    const r = $("#imRef"); r.textContent = refName(); r.className = "ref changed"; reflow(r, "flash");
+    $("#imVerdict").innerHTML = `Object.is(ძველი ${old}, ახალი ${refName()}) → <b style="color:var(--ok)">false</b><br>// ახალი მასივია. React ხელახლა ხატავს.`;
+    drawIm(screenList.length - 1); reflow($("#imScreen"), "flash");
+  });
+  $("#imReset").addEventListener("click", () => {
+    refN = 1; mem = [...START]; screenList = [...START]; extraI = 0;
+    const r = $("#imRef"); r.textContent = refName(); r.className = "ref";
+    $("#imVerdict").textContent = "// აირჩიე ერთ-ერთი გზა"; drawIm();
+  });
+  drawIm();
+
+  /* ========== 5. TREE ========== */
+  const nodes = $$("#ctree .cn");
+  const byId = id => nodes.find(n => n.dataset.id === id);
+  let owner = "ProductList", treeBusy = false;
+  const markOwner = () => nodes.forEach(n => n.classList.toggle("owner", n.dataset.id === owner));
+  $$("#ownerSeg button").forEach(b => b.addEventListener("click", () => {
+    $$("#ownerSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    owner = b.dataset.owner; markOwner();
+  }));
+  function subtreeLevels(id) {
+    const levels = [[byId(id)]];
+    for (;;) {
+      const prev = levels[levels.length - 1].map(n => n.dataset.id);
+      const next = nodes.filter(n => prev.includes(n.dataset.parent));
+      if (!next.length) break; levels.push(next);
+    }
+    return levels;
+  }
+  $("#treeGo").addEventListener("click", async () => {
+    if (treeBusy) return; treeBusy = true;
+    for (const lvl of subtreeLevels(owner)) {
+      lvl.forEach(n => { const c = $("small span", n); c.textContent = +c.textContent + 1; reflow(n, "rerender"); });
+      await wait(380);
+    }
+    treeBusy = false;
+  });
+  markOwner();
+})();
+</script>
+
+</body></html>
